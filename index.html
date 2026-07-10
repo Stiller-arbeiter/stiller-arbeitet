@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Der stille Arbeiter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:#170F16;
+    color:#F2E9E3;
+    font-family:'Fraunces',serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:2rem;
+  }
+  .dot{
+    width:10px;height:10px;
+    border-radius:50%;
+    background:#D4A668;
+    box-shadow:0 0 20px 4px rgba(212,166,104,0.6);
+    margin-bottom:2.5rem;
+    animation:pulse 4s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1);opacity:0.8;}
+    50%{transform:scale(1.4);opacity:1;}
+  }
+  h1{
+    font-weight:300;
+    font-size:clamp(2rem,6vw,3.2rem);
+    letter-spacing:0.02em;
+    margin-bottom:1rem;
+  }
+  p{
+    font-weight:300;
+    font-size:1.05rem;
+    color:#93818a;
+    max-width:420px;
+    line-height:1.7;
+  }
+  .soon{
+    margin-top:2.5rem;
+    font-size:0.8rem;
+    letter-spacing:0.15em;
+    text-transform:uppercase;
+    color:#6b5638;
+  }
+</style>
+</head>
+<body>
+  <div class="dot"></div>
+  <h1>Der stille Arbeiter</h1>
+  <p>Erst ändert sich der Mensch. Dann die Welt. Nie andersrum.</p>
+  <div class="soon">Bald hier</div>
+</body>
+</html>
