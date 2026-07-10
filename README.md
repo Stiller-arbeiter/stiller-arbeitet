@@ -1,2 +1,2 @@
-# stiller-arbeitet
+# stiller-arbeiter
 Trainingsprogramm
