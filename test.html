@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test — Die Umkehr</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap" rel="stylesheet">
+<style>
+  :root{--ground:#12100E;--raised:#1C1814;--read:#E8DFD2;--faded:#8A7B6B;--ember:#B8703F;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--ground);color:var(--read);font-family:'Newsreader',Georgia,serif;font-weight:300;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:6vh 7vw;line-height:1.8;}
+  .card{max-width:560px;width:100%;}
+  .eyebrow{font-family:'Fraunces',serif;text-transform:uppercase;letter-spacing:0.26em;font-size:0.7rem;color:var(--faded);margin-bottom:1.6rem;}
+  h1{font-family:'Fraunces',serif;font-weight:300;font-size:1.8rem;margin-bottom:1.5rem;line-height:1.35;}
+  p.hint{color:var(--faded);font-size:1rem;margin-bottom:2rem;}
+  textarea{width:100%;min-height:110px;background:var(--raised);border:1px solid rgba(138,123,107,0.25);border-radius:3px;color:var(--read);font-family:'Newsreader',Georgia,serif;font-size:1.05rem;font-weight:300;padding:1rem;line-height:1.7;resize:vertical;}
+  textarea:focus{outline:none;border-color:rgba(184,112,63,0.6);}
+  textarea::placeholder{color:#5a5148;}
+  button{margin-top:1.2rem;font-family:'Fraunces',serif;font-size:1rem;color:var(--read);background:transparent;border:1px solid rgba(184,112,63,0.5);border-radius:2px;padding:0.85rem 1.9rem;cursor:pointer;transition:all 0.35s ease;}
+  button:hover:not(:disabled){border-color:var(--ember);background:rgba(184,112,63,0.08);}
+  button:disabled{opacity:0.45;cursor:default;}
+  #antwort{margin-top:2.5rem;padding-top:2rem;border-top:1px solid rgba(138,123,107,0.18);font-size:1.08rem;line-height:1.9;white-space:pre-wrap;display:none;}
+  #antwort.zeigen{display:block;}
+  .laedt{color:var(--faded);font-style:italic;}
+  .fehler{color:#c07050;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="eyebrow">Testlauf</div>
+    <h1>Die Umkehr</h1>
+    <p class="hint">Schreib eine Sorge auf, so wie du sie morgens aufschreiben würdest. Der Abend gibt sie dir zurück.</p>
+    <textarea id="sorge" placeholder="Was drückt gerade?"></textarea>
+    <button id="btn">Die Umkehr holen</button>
+    <div id="antwort"></div>
+  </div>
+<script>
+const btn = document.getElementById('btn');
+const feld = document.getElementById('sorge');
+const box = document.getElementById('antwort');
+
+btn.addEventListener('click', async () => {
+  const sorge = feld.value.trim();
+  if(!sorge){
+    box.className = 'zeigen fehler';
+    box.textContent = 'Schreib zuerst etwas auf.';
+    return;
+  }
+  btn.disabled = true;
+  box.className = 'zeigen laedt';
+  box.textContent = 'Der Abend schaut auf deine Worte…';
+  try {
+    const res = await fetch('/api/umkehr', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ sorge: sorge, tuer: 1 })
+    });
+    const data = await res.json();
+    if(!res.ok || !data.umkehr){
+      box.className = 'zeigen fehler';
+      box.textContent = 'Fehler: ' + (data.error || 'Unbekannt') + '\n\nStatus: ' + res.status;
+    } else {
+      box.className = 'zeigen';
+      box.textContent = data.umkehr;
+    }
+  } catch(err){
+    box.className = 'zeigen fehler';
+    box.textContent = 'Verbindungsfehler: ' + err.message;
+  }
+  btn.disabled = false;
+});
+</script>
+</body>
+</html>
