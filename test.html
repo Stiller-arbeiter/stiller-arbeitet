@@ -50,7 +50,7 @@ btn.addEventListener('click', async () => {
   box.className = 'zeigen laedt';
   box.textContent = 'Der Abend schaut auf deine Worte…';
   try {
-    const res = await fetch('/api/umkehr', {
+    const res = await fetch('/api/Umkehr', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ sorge: sorge, tuer: 1 })
