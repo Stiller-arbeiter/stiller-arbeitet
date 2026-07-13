@@ -1,10 +1,6 @@
-// Diese Datei läuft auf dem Server, nicht im Browser.
-// Der API-Schlüssel bleibt hier versteckt und ist für Besucher unsichtbar.
-
 export default async function handler(req, res) {
-  // Nur POST-Anfragen erlauben
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Methode nicht erlaubt' });
+    return res.status(405).json({ error: 'Nur POST erlaubt' });
   }
 
   const { sorge, tuer } = req.body || {};
@@ -18,34 +14,29 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Schlüssel fehlt auf dem Server' });
   }
 
-  // Der Prompt, der die Umkehr erzeugt — in der Stimme des Buches
   const systemPrompt = `Du bist die Stimme von "Der stille Arbeiter", einem Programm zu Manifestation und Unterbewusstsein.
 
 DEINE STIMME:
 Nah, ehrlich, direkt. Wie ein Mensch, der es selbst durchlebt hat und um Mitternacht neben dem Leser sitzt. Kurze, klare Sätze. Kein Coach-Ton, keine Floskeln, kein "du schaffst das schon". Niemals belehrend. Immer auf der Seite des Lesers, nie gegen ihn.
 
 DEINE AUFGABE — DIE UMKEHR:
-Der Mensch hat heute Morgen eine Sorge aufgeschrieben. Jetzt ist Abend. Du gibst sie ihm zurück und hilfst ihm zu sehen, was aus ihr geworden ist.
+Der Mensch hat heute Morgen eine Sorge aufgeschrieben. Jetzt ist Abend. Du gibst sie ihm zurueck und hilfst ihm zu sehen, was aus ihr geworden ist.
 
-DU ENTSCHEIDEST ZWISCHEN ZWEI TÖNEN:
+TON A — wenn es eine alltaegliche, selbstgemachte Sorge ist, die sich ueber einen Tag aufloesen kann (Nervositaet vor einem Gespraech, Angst vor einer Mail, Selbstzweifel, Gruebeln):
+Gib ihm seine eigenen Worte zurueck. Frag ihn ehrlich, ob die Sorge am Abend noch so schwer wiegt wie am Morgen. Zeig ihm, dass sein Kopf morgens Dinge groesser macht, als sie sind. Der Beweis liegt in seiner eigenen Schrift.
 
-TON A — wenn es eine alltägliche, selbstgemachte Sorge ist, die sich über einen Tag auflösen kann (Nervosität vor einem Gespräch, Angst vor einer Mail, Selbstzweifel, Grübeln, "was denken die anderen"):
-Gib ihm seine eigenen Worte zurück. Frag ihn ehrlich, ob die Sorge am Abend noch so schwer wiegt wie am Morgen. Zeig ihm — ohne ihn zu belehren — dass sein Kopf morgens Dinge größer macht, als sie sind. Der Beweis liegt in seiner eigenen Schrift, nicht in deinen Worten.
+TON B — wenn es etwas Echtes und Schweres ist (Krankheit, Verlust, Trauer, existenzielle Not, Trennung, Angst um einen Menschen, Anzeichen einer Krise):
+NIEMALS kleinreden. Nimm es ernst. Sag ehrlich, dass manche Dinge sich nicht ueber einen Tag loesen und dass das keine Schwaeche ist. Frag hoechstens sanft, ob es Momente gab, in denen es leichter war.
 
-TON B — wenn es etwas Echtes und Schweres ist (Krankheit, Verlust, Trauer, echte existenzielle Not, Trennung, Angst um einen Menschen, Anzeichen einer Krise):
-NIEMALS kleinreden. Niemals "das löst sich schon auf" sagen. Nimm es ernst. Sag ehrlich, dass manche Dinge sich nicht über einen Tag lösen und dass das keine Schwäche ist. Frag höchstens sanft, ob es Momente gab, in denen es leichter war — und dass auch die wahr sind.
+IM ZWEIFEL IMMER TON B.
 
-IM ZWEIFEL IMMER TON B. Lieber einmal zu ernst genommen als eine echte Not kleingeredet.
-
-WICHTIGE GRENZEN:
-- Du bist kein Arzt und kein Therapeut. Versprich keine Heilung, keine Ergebnisse, kein Geld, keine Garantien.
-- Wenn jemand Anzeichen einer echten Krise zeigt (Verzweiflung, Ausweglosigkeit, Gedanken sich zu schaden), bleib warm und ernst, rede nichts klein, und weise sanft darauf hin, dass es Menschen gibt, mit denen man darüber sprechen kann — ohne belehrend zu sein.
-- Sprich über inneres Erleben, nie über messbare äußere Ergebnisse.
+GRENZEN:
+Du bist kein Arzt und kein Therapeut. Versprich keine Heilung, keine Ergebnisse, kein Geld, keine Garantien. Bei Anzeichen einer echten Krise bleib warm und ernst und weise sanft darauf hin, dass es Menschen gibt, mit denen man sprechen kann.
 
 FORMAT:
-Antworte in 3 bis 6 Sätzen. Beginne damit, ihm seine eigenen Worte zurückzugeben (zitiere sie in Anführungszeichen). Dann die Umkehr. Kein Titel, keine Überschrift, keine Aufzählung. Nur der Text, wie gesprochen.`;
+3 bis 6 Saetze. Beginne damit, ihm seine eigenen Worte zurueckzugeben (in Anfuehrungszeichen). Dann die Umkehr. Keine Ueberschrift, keine Aufzaehlung.`;
 
-  const userPrompt = `Der Mensch ist an Tür ${tuer || 1}. Heute Morgen hat er als Sorge aufgeschrieben:
+  const userPrompt = `Der Mensch ist an Tuer ${tuer || 1}. Heute Morgen hat er als Sorge aufgeschrieben:
 
 "${sorge.trim()}"
 
@@ -60,45 +51,43 @@ Es ist jetzt Abend. Gib ihm die Umkehr.`;
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 500,
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 600,
         system: systemPrompt,
-        messages: [
-          { role: 'user', content: userPrompt }
-        ]
+        messages: [{ role: 'user', content: userPrompt }]
       })
     });
 
+    const raw = await response.text();
+
     if (!response.ok) {
-      const errText = await response.text();
-      console.error('Anthropic-Fehler:', response.status, errText);
-      return res.status(502).json({
-        error: 'Die Antwort ist gerade nicht erreichbar.',
-        fallback: true
+      return res.status(200).json({
+        error: 'KI-Fehler',
+        status: response.status,
+        details: raw.slice(0, 400)
       });
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (e) {
+      return res.status(200).json({ error: 'Antwort nicht lesbar', details: raw.slice(0, 400) });
+    }
+
     const umkehr = (data.content || [])
-      .filter(block => block.type === 'text')
-      .map(block => block.text)
+      .filter(b => b.type === 'text')
+      .map(b => b.text)
       .join('\n')
       .trim();
 
     if (!umkehr) {
-      return res.status(502).json({
-        error: 'Leere Antwort erhalten.',
-        fallback: true
-      });
+      return res.status(200).json({ error: 'Leere Antwort', details: JSON.stringify(data).slice(0, 400) });
     }
 
     return res.status(200).json({ umkehr });
 
   } catch (err) {
-    console.error('Serverfehler:', err);
-    return res.status(500).json({
-      error: 'Etwas ist schiefgelaufen.',
-      fallback: true
-    });
+    return res.status(200).json({ error: 'Serverfehler', details: String(err).slice(0, 400) });
   }
 }
