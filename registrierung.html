@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zugang — Der stille Arbeiter</title>
+<title>Zugang - Der stille Arbeiter</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -21,7 +21,7 @@
   button{width:100%;margin-top:1.8rem;font-family:'Fraunces',serif;font-size:1rem;color:var(--read);background:transparent;border:1px solid rgba(184,112,63,0.5);border-radius:2px;padding:0.9rem;cursor:pointer;transition:all 0.35s ease;}
   button:hover:not(:disabled){border-color:var(--ember);background:rgba(184,112,63,0.08);}
   button:disabled{opacity:0.45;cursor:default;}
-  #status{margin-top:1.5rem;font-size:0.95rem;text-align:center;min-height:1.5em;word-break:break-word;}
+  #meldung{margin-top:1.5rem;font-size:0.95rem;text-align:center;min-height:1.5em;word-break:break-word;}
   .fehler{color:#e08050;font-weight:400;}
   .erfolg{color:var(--ember);}
 </style>
@@ -29,7 +29,7 @@
 <body>
   <div class="card">
     <div class="eyebrow">Zugang</div>
-    <h1>Bevor die erste Tür sich öffnet</h1>
+    <h1>Bevor die erste Tuer sich oeffnet</h1>
     <label for="vorname">Vorname</label>
     <input id="vorname" placeholder="Dein Vorname" />
     <label for="nachname">Nachname</label>
@@ -42,8 +42,8 @@
       <div>
         <label for="geschlecht">Geschlecht</label>
         <select id="geschlecht">
-          <option value="">bitte wählen</option>
-          <option value="m">männlich</option>
+          <option value="">bitte waehlen</option>
+          <option value="m">maennlich</option>
           <option value="w">weiblich</option>
           <option value="divers">divers / keine Angabe</option>
         </select>
@@ -54,75 +54,70 @@
     <label for="passwort">Passwort</label>
     <input id="passwort" type="password" placeholder="Mindestens 6 Zeichen" />
     <button id="btn">Zugang anlegen</button>
-    <div id="status">Bereit.</div>
+    <div id="meldung">Bereit.</div>
   </div>
 <script>
-  alert('NEUE VERSION LÄUFT — Zeitstempel: 2');
+  var meldung = document.getElementById('meldung');
+  var btn = document.getElementById('btn');
 
-  const status = document.getElementById('status');
-  const btn = document.getElementById('btn');
-
-  window.addEventListener('error', function(e){
-    status.className = 'fehler';
-    status.textContent = 'SEITEN-FEHLER: ' + e.message;
-  });
-
-  let supabase;
+  var supabaseClient;
   try {
-    const SUPABASE_URL = 'https://kkgpsjlchcfrkcfhbgtp.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_L2hwq-MPg-2ZdCd6Dw2RUA_Hw_oT0vp';
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    status.textContent = 'Verbindung bereit. Formular ausfüllen und Knopf drücken.';
+    var SUPABASE_URL = 'https://kkgpsjlchcfrkcfhbgtp.supabase.co';
+    var SUPABASE_KEY = 'sb_publishable_L2hwq-MPg-2ZdCd6Dw2RUA_Hw_oT0vp';
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    meldung.textContent = 'Verbindung bereit. Formular ausfuellen und Knopf druecken.';
   } catch (err) {
-    status.className = 'fehler';
-    status.textContent = 'VERBINDUNGS-FEHLER BEIM LADEN: ' + (err && err.message ? err.message : String(err));
+    meldung.className = 'fehler';
+    meldung.textContent = 'VERBINDUNGS-FEHLER: ' + (err && err.message ? err.message : String(err));
   }
 
-  btn.addEventListener('click', async function(){
+  btn.addEventListener('click', function(){
+    handleSignup();
+  });
+
+  async function handleSignup(){
     try {
-      const vorname = document.getElementById('vorname').value.trim();
-      const nachname = document.getElementById('nachname').value.trim();
-      const geburtstag = document.getElementById('geburtstag').value;
-      const geschlecht = document.getElementById('geschlecht').value;
-      const email = document.getElementById('email').value.trim();
-      const passwort = document.getElementById('passwort').value;
+      var vorname = document.getElementById('vorname').value.trim();
+      var nachname = document.getElementById('nachname').value.trim();
+      var geburtstag = document.getElementById('geburtstag').value;
+      var geschlecht = document.getElementById('geschlecht').value;
+      var email = document.getElementById('email').value.trim();
+      var passwort = document.getElementById('passwort').value;
 
       if(!vorname || !email || !passwort){
-        status.className = 'fehler';
-        status.textContent = 'Vorname, E-Mail und Passwort sind Pflicht.';
+        meldung.className = 'fehler';
+        meldung.textContent = 'Vorname, E-Mail und Passwort sind Pflicht.';
         return;
       }
       if(passwort.length < 6){
-        status.className = 'fehler';
-        status.textContent = 'Das Passwort muss mindestens 6 Zeichen haben.';
+        meldung.className = 'fehler';
+        meldung.textContent = 'Das Passwort muss mindestens 6 Zeichen haben.';
         return;
       }
 
       btn.disabled = true;
-      status.className = '';
-      status.textContent = 'Dein Zugang wird angelegt…';
+      meldung.className = '';
+      meldung.textContent = 'Dein Zugang wird angelegt...';
 
-      const signUpResult = await supabase.auth.signUp({ email: email, password: passwort });
-      const authError = signUpResult.error;
-      const authData = signUpResult.data;
+      var signUpResult = await supabaseClient.auth.signUp({ email: email, password: passwort });
 
-      if(authError){
-        status.className = 'fehler';
-        status.textContent = 'FEHLER BEI ANMELDUNG: ' + authError.message;
+      if(signUpResult.error){
+        meldung.className = 'fehler';
+        meldung.textContent = 'FEHLER BEI ANMELDUNG: ' + signUpResult.error.message;
         btn.disabled = false;
         return;
       }
 
-      const userId = (authData && authData.user) ? authData.user.id : null;
+      var userId = (signUpResult.data && signUpResult.data.user) ? signUpResult.data.user.id : null;
 
       if(!userId){
-        status.className = 'fehler';
-        status.textContent = 'Kein User-Objekt erhalten. Eventuell ist E-Mail-Bestätigung aktiv oder die E-Mail existiert schon.';
+        meldung.className = 'fehler';
+        meldung.textContent = 'Kein User-Objekt erhalten.';
         btn.disabled = false;
         return;
       }
 
-      const profilResult = await supabase.from('profile').insert({
+      var profilResult = await supabaseClient.from('profile').insert({
         id: userId,
         vorname: vorname,
         nachname: nachname || null,
@@ -131,22 +126,22 @@
       });
 
       if(profilResult.error){
-        status.className = 'fehler';
-        status.textContent = 'Konto wurde angelegt, aber PROFIL-FEHLER: ' + profilResult.error.message;
+        meldung.className = 'fehler';
+        meldung.textContent = 'Konto angelegt, aber PROFIL-FEHLER: ' + profilResult.error.message;
         btn.disabled = false;
         return;
       }
 
-      status.className = 'erfolg';
-      status.textContent = 'Willkommen, ' + vorname + '. Dein Zugang steht. Prüf deine E-Mail zur Bestätigung.';
+      meldung.className = 'erfolg';
+      meldung.textContent = 'Willkommen, ' + vorname + '. Dein Zugang steht. Pruef deine E-Mail zur Bestaetigung.';
       btn.disabled = false;
 
     } catch (err) {
-      status.className = 'fehler';
-      status.textContent = 'UNERWARTETER FEHLER: ' + (err && err.message ? err.message : String(err));
+      meldung.className = 'fehler';
+      meldung.textContent = 'UNERWARTETER FEHLER: ' + (err && err.message ? err.message : String(err));
       btn.disabled = false;
     }
-  });
+  }
 </script>
 </body>
 </html>
