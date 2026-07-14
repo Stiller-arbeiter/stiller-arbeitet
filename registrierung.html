@@ -21,8 +21,8 @@
   button{width:100%;margin-top:1.8rem;font-family:'Fraunces',serif;font-size:1rem;color:var(--read);background:transparent;border:1px solid rgba(184,112,63,0.5);border-radius:2px;padding:0.9rem;cursor:pointer;transition:all 0.35s ease;}
   button:hover:not(:disabled){border-color:var(--ember);background:rgba(184,112,63,0.08);}
   button:disabled{opacity:0.45;cursor:default;}
-  #status{margin-top:1.5rem;font-size:0.95rem;text-align:center;min-height:1.5em;}
-  .fehler{color:#c07050;}
+  #status{margin-top:1.5rem;font-size:0.95rem;text-align:center;min-height:1.5em;word-break:break-word;}
+  .fehler{color:#e08050;font-weight:400;}
   .erfolg{color:var(--ember);}
 </style>
 </head>
@@ -54,78 +54,96 @@
     <label for="passwort">Passwort</label>
     <input id="passwort" type="password" placeholder="Mindestens 6 Zeichen" />
     <button id="btn">Zugang anlegen</button>
-    <div id="status"></div>
+    <div id="status">Bereit.</div>
   </div>
 <script>
-  const SUPABASE_URL = 'https://kkgpsjlchcfrkcfhbgtp.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_L2hwq-MPg-2ZdCd6Dw2RUA_Hw_oT0vp';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  const btn = document.getElementById('btn');
   const status = document.getElementById('status');
+  const btn = document.getElementById('btn');
 
-  btn.addEventListener('click', async () => {
-    const vorname = document.getElementById('vorname').value.trim();
-    const nachname = document.getElementById('nachname').value.trim();
-    const geburtstag = document.getElementById('geburtstag').value;
-    const geschlecht = document.getElementById('geschlecht').value;
-    const email = document.getElementById('email').value.trim();
-    const passwort = document.getElementById('passwort').value;
+  window.addEventListener('error', function(e){
+    status.className = 'fehler';
+    status.textContent = 'SEITEN-FEHLER: ' + e.message;
+  });
 
-    if(!vorname || !email || !passwort){
-      status.className = 'fehler';
-      status.textContent = 'Vorname, E-Mail und Passwort sind Pflicht.';
-      return;
-    }
-    if(passwort.length < 6){
-      status.className = 'fehler';
-      status.textContent = 'Das Passwort muss mindestens 6 Zeichen haben.';
-      return;
-    }
+  let supabase;
+  try {
+    const SUPABASE_URL = 'https://kkgpsjlchcfrkcfhbgtp.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_L2hwq-MPg-2ZdCd6Dw2RUA_Hw_oT0vp';
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    status.textContent = 'Verbindung bereit. Formular ausfüllen und Knopf drücken.';
+  } catch (err) {
+    status.className = 'fehler';
+    status.textContent = 'VERBINDUNGS-FEHLER BEIM LADEN: ' + (err && err.message ? err.message : String(err));
+  }
 
-    btn.disabled = true;
-    status.className = '';
-    status.textContent = 'Dein Zugang wird angelegt…';
+  btn.addEventListener('click', async function(){
+    try {
+      const vorname = document.getElementById('vorname').value.trim();
+      const nachname = document.getElementById('nachname').value.trim();
+      const geburtstag = document.getElementById('geburtstag').value;
+      const geschlecht = document.getElementById('geschlecht').value;
+      const email = document.getElementById('email').value.trim();
+      const passwort = document.getElementById('passwort').value;
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: email,
-      password: passwort
-    });
+      if(!vorname || !email || !passwort){
+        status.className = 'fehler';
+        status.textContent = 'Vorname, E-Mail und Passwort sind Pflicht.';
+        return;
+      }
+      if(passwort.length < 6){
+        status.className = 'fehler';
+        status.textContent = 'Das Passwort muss mindestens 6 Zeichen haben.';
+        return;
+      }
 
-    if(authError){
-      status.className = 'fehler';
-      status.textContent = 'Fehler: ' + authError.message;
+      btn.disabled = true;
+      status.className = '';
+      status.textContent = 'Dein Zugang wird angelegt…';
+
+      const signUpResult = await supabase.auth.signUp({ email: email, password: passwort });
+      const authError = signUpResult.error;
+      const authData = signUpResult.data;
+
+      if(authError){
+        status.className = 'fehler';
+        status.textContent = 'FEHLER BEI ANMELDUNG: ' + authError.message;
+        btn.disabled = false;
+        return;
+      }
+
+      const userId = (authData && authData.user) ? authData.user.id : null;
+
+      if(!userId){
+        status.className = 'fehler';
+        status.textContent = 'Kein User-Objekt erhalten. Eventuell ist E-Mail-Bestätigung aktiv oder die E-Mail existiert schon.';
+        btn.disabled = false;
+        return;
+      }
+
+      const profilResult = await supabase.from('profile').insert({
+        id: userId,
+        vorname: vorname,
+        nachname: nachname || null,
+        geburtstag: geburtstag || null,
+        geschlecht: geschlecht || null
+      });
+
+      if(profilResult.error){
+        status.className = 'fehler';
+        status.textContent = 'Konto wurde angelegt, aber PROFIL-FEHLER: ' + profilResult.error.message;
+        btn.disabled = false;
+        return;
+      }
+
+      status.className = 'erfolg';
+      status.textContent = 'Willkommen, ' + vorname + '. Dein Zugang steht. Prüf deine E-Mail zur Bestätigung.';
       btn.disabled = false;
-      return;
-    }
 
-    const userId = authData.user ? authData.user.id : null;
-
-    if(!userId){
+    } catch (err) {
       status.className = 'fehler';
-      status.textContent = 'Konto konnte nicht angelegt werden.';
+      status.textContent = 'UNERWARTETER FEHLER: ' + (err && err.message ? err.message : String(err));
       btn.disabled = false;
-      return;
     }
-
-    const { error: profilError } = await supabase.from('profile').insert({
-      id: userId,
-      vorname: vorname,
-      nachname: nachname || null,
-      geburtstag: geburtstag || null,
-      geschlecht: geschlecht || null
-    });
-
-    if(profilError){
-      status.className = 'fehler';
-      status.textContent = 'Konto wurde angelegt, aber Profil-Fehler: ' + profilError.message;
-      btn.disabled = false;
-      return;
-    }
-
-    status.className = 'erfolg';
-    status.textContent = 'Willkommen, ' + vorname + '. Dein Zugang steht. Prüf deine E-Mail zur Bestätigung.';
-    btn.disabled = false;
   });
 </script>
 </body>
