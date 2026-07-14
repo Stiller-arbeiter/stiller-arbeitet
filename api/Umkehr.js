@@ -2,18 +2,6 @@ export const config = {
   maxDuration: 30,
 };
 
-var TUEREN_PRINZIP = {
-  1: { titel: "Die Nadel in deiner Brust", prinzip: "Das eigene Gefuehl als Kompass lesen - eng oder weit. Nicht das Leben entscheidet, sondern der Ton, den man traegt, bevor man handelt." },
-  2: { titel: "Die Werkstatt hinter deinen Augen", prinzip: "Der Kopf ist eine Werkstatt, die baut, was man ihm gibt - Angst oder Wunsch, ohne Unterschied. Visualisierung heisst: im fertigen Bild wohnen, nicht danach greifen." },
-  3: { titel: "Der stille Arbeiter, der nie schlaeft", prinzip: "Das Unterbewusstsein - der stille Arbeiter - fuehrt aus, was man ihm gibt, ohne zu urteilen. Er hat immer gearbeitet, das Problem war nur, welches Bild er bekam." },
-  4: { titel: "Was dein Glaube bis in die Zellen fluestert", prinzip: "Die eigene Ueberzeugung ist die Umgebung, in der die Zellen leben - nicht die Gene entscheiden, sondern was man fuer wahr haelt." },
-  5: { titel: "Wohin die leisen Worte gehen", prinzip: "Der stille Zuhoerer hoert nicht auf Worte, sondern auf das, was man fuehlt, waehrend man sie sagt." },
-  6: { titel: "Der Same und die Erde", prinzip: "Wiederholung mit Leichtigkeit wurzelt tiefer als Zwang. Der Same wird nicht groesser, weil man ihn anschreit." },
-  7: { titel: "Die Decke, die du selbst gezogen hast", prinzip: "Ein innerer Thermostat regelt zurueck, wenn es zu gut laeuft - nicht aus Pech, sondern weil das Vertraute sich sicherer anfuehlt als das Moegliche." },
-  8: { titel: "Der Mensch, den du gestern warst", prinzip: "Man wird nicht der, der man sein will, indem man wartet - sondern indem man ihn spielt, in einem einzigen Moment, dann im naechsten." },
-  9: { titel: "Der Raum hinter dem Laerm", prinzip: "Stille ist der Boden, auf dem alles andere waechst. Energie, Glaube, Unterbewusstsein, Universum - verschiedene Namen fuer dieselbe Sache." }
-};
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Nur POST erlaubt' });
@@ -30,10 +18,34 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Schluessel fehlt auf dem Server' });
   }
 
+  var tuerNummer = tuer || 1;
+
+  var SUPABASE_URL = 'https://kkgpsjlchcfrkcfhbgtp.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_L2hwq-MPg-2ZdCd6Dw2RUA_Hw_oT0vp';
+
+  var tuerInfo;
+  try {
+    var dbResponse = await fetch(
+      SUPABASE_URL + '/rest/v1/tueren_content?tuer=eq.' + tuerNummer + '&select=titel,prinzip',
+      {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY
+        }
+      }
+    );
+    var dbData = await dbResponse.json();
+    if (dbData && dbData.length > 0) {
+      tuerInfo = { titel: dbData[0].titel, prinzip: dbData[0].prinzip };
+    } else {
+      tuerInfo = { titel: 'Die Nadel in deiner Brust', prinzip: 'Das eigene Gefuehl als Kompass lesen - eng oder weit.' };
+    }
+  } catch (e) {
+    tuerInfo = { titel: 'Die Nadel in deiner Brust', prinzip: 'Das eigene Gefuehl als Kompass lesen - eng oder weit.' };
+  }
+
   var istAbend = moment === 'abend';
   var hatAbendText = istAbend && abendText && abendText.trim().length > 0;
-  var tuerNummer = tuer || 1;
-  var tuerInfo = TUEREN_PRINZIP[tuerNummer] || TUEREN_PRINZIP[1];
 
   var modusAnweisung;
   if (!istAbend) {
@@ -57,7 +69,7 @@ ${modusAnweisung}
 DAS PRINZIP DIESER TUER - MUSS SPUERBAR EINFLIESSEN:
 Tuer ${tuerNummer}: "${tuerInfo.titel}"
 ${tuerInfo.prinzip}
-Nutze dieses Bild, aber VARIIERE, wie du es einbaust - mal explizit benennen, mal nur anklingen lassen, nie wortgleich wiederholen. Wenn das Bild z.B. "die Nadel" ist, sag nicht in jeder Antwort denselben Satz ("die Nadel zeigt dir eng oder weit") - das wirkt nach ein paar Malen stur statt lebendig. Erfinde jedes Mal einen neuen Zugang zum selben Kernprinzip.
+Nutze dieses Bild, aber VARIIERE, wie du es einbaust - mal explizit benennen, mal nur anklingen lassen, nie wortgleich wiederholen. Erfinde jedes Mal einen neuen Zugang zum selben Kernprinzip.
 
 ANREDE:
 Vornamen nutzen, falls gegeben. Bei erkennbarem Geschlecht zusaetzlich "mein Lieber"/"meine Liebe". Genau einmal, am Anfang.
