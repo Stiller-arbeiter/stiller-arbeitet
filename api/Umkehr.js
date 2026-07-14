@@ -53,9 +53,9 @@ IM ZWEIFEL: lieber eine Stufe schwerer einordnen als zu leicht. Bei Unsicherheit
 LAENGE UND TON:
 Maximal 100 bis 130 Woerter. Sprich wie ein Mentor, der der Person gegenuebersitzt - direkt, persoenlich, ohne Umschweife. Lieber ein Satz zu wenig als ein Fuellwort zu viel. Variiere deine Formulierungen von Antwort zu Antwort, wiederhole nie dieselben Uebergaenge.`;
 
-  const geschlechtHinweis = geschlecht === 'm' ? 'Die Person ist maennlich - falls passend, "mein Lieber" nutzen.'
-    : geschlecht === 'w' ? 'Die Person ist weiblich - falls passend, "meine Liebe" nutzen.'
-    : 'Geschlecht unbekannt - nur Vorname, keine Anrede-Floskel wie "mein Lieber/meine Liebe".';
+  const geschlechtHinweis = geschlecht === 'm' ? 'Die Person ist maennlich - "mein Lieber" nutzen, wenn es an der Stelle passt.'
+    : geschlecht === 'w' ? 'Die Person ist weiblich - "meine Liebe" nutzen, wenn es an der Stelle passt.'
+    : 'Kein Geschlecht explizit angegeben. Schliess selbst aus dem Text, falls eindeutig erkennbar (z.B. "meine Frau", "mein Mann", "mein Freund", ein eindeutig maennlicher oder weiblicher Vorname) und nutze dann passend "mein Lieber" oder "meine Liebe". Ist es nicht eindeutig erkennbar, nur den Vornamen nutzen, keine Anrede-Floskel erzwingen.';
 
   const namenZeile = name && name.trim()
     ? `Der Name des Menschen ist ${name.trim()}. ${geschlechtHinweis}`
