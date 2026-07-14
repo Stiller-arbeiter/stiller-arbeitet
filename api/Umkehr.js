@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Nur POST erlaubt' });
   }
 
-  const { sorge, tuer, name, geschlecht, moment } = req.body || {};
+  const { sorge, abendText, tuer, name, geschlecht, moment } = req.body || {};
 
   if (!sorge || typeof sorge !== 'string' || sorge.trim().length === 0) {
     return res.status(400).json({ error: 'Keine Sorge uebermittelt' });
@@ -31,14 +31,21 @@ export default async function handler(req, res) {
   }
 
   var istAbend = moment === 'abend';
+  var hatAbendText = istAbend && abendText && abendText.trim().length > 0;
   var tuerNummer = tuer || 1;
   var tuerInfo = TUEREN_PRINZIP[tuerNummer] || TUEREN_PRINZIP[1];
 
-  var modusAnweisung = istAbend
-    ? `MODUS: ABEND - DIE UMKEHR.
-Die Person hat diese Sorge heute FRUEH geschrieben, du hast ihr da schon geantwortet. Jetzt ist Abend. Gib ihr ihre eigenen Worte zurueck (in Anfuehrungszeichen). Frag oder zeig, was der Tag daraus gemacht hat - ist die Sorge noch genauso schwer wie morgens, oder hat sich was bewegt? Das ist der Beweis-Moment: der Tag zeigt oft, dass der Kopf morgens Dinge groesser gemacht hat, als sie waren. Schliesse mit dem Prinzip dieser Tuer.`
-    : `MODUS: MORGEN - ECHTE ERSTE UNTERSTUETZUNG.
-Die Person schreibt das gerade JETZT, am Morgen, zum ersten Mal auf. Sie braucht jetzt echte Unterstuetzung, keine Vertroestung auf spaeter. Gib eine vollwertige, warme Antwort mit dem Prinzip dieser Tuer. WICHTIG: Schliesse nicht komplett ab, als waere alles geloest - das ist erst der Start in den Tag. Ende offen und tragend, z.B. mit einem Gedanken oder einer kleinen Aufgabe, die sie durch den Tag begleitet. Kein "warte bis heute Abend", sondern ein natuerlicher, warmer Ausblick wie ein echter Begleiter ihn geben wuerde - z.B. "trag das heute mit dir, wir schauen es uns heute Abend gemeinsam nochmal an". Nicht kalt, nicht buerokratisch.`;
+  var modusAnweisung;
+  if (!istAbend) {
+    modusAnweisung = `MODUS: MORGEN - ECHTE ERSTE UNTERSTUETZUNG.
+Die Person schreibt das gerade JETZT, am Morgen, zum ersten Mal auf. Sie braucht jetzt echte Unterstuetzung, keine Vertroestung auf spaeter. Gib eine vollwertige, warme Antwort mit dem Prinzip dieser Tuer. Schliesse nicht komplett ab - das ist erst der Start in den Tag. Ende offen und tragend, z.B. "trag das heute mit dir, wir schauen es uns heute Abend gemeinsam nochmal an". Nicht kalt, nicht buerokratisch.`;
+  } else if (hatAbendText) {
+    modusAnweisung = `MODUS: ABEND - MIT ECHTER RUECKMELDUNG DER PERSON.
+Die Person hat morgens diese Sorge geschrieben (unten als SORGE MORGENS). Jetzt ist Abend, und sie hat SELBST aufgeschrieben, wie es ihr jetzt geht (unten als RUECKMELDUNG ABENDS). Das ist keine Vermutung von dir - nutze genau das, was sie geschrieben hat. Wenn sie sagt, es ist besser geworden: bestaetige das ehrlich und zeig, warum das zum Prinzip dieser Tuer passt. Wenn sie sagt, es ist immer noch schwer: nimm das ernst, rede es nicht klein, aber biete trotzdem die Tuer-Lehre als neuen Blickwinkel an. Gib ihre eigenen Worte aus beiden Texten zurueck (kurz, in Anfuehrungszeichen). Schliesse mit dem Prinzip dieser Tuer.`;
+  } else {
+    modusAnweisung = `MODUS: ABEND - OHNE EIGENE RUECKMELDUNG.
+Die Person hat morgens diese Sorge geschrieben, aber abends keine eigene Rueckmeldung dazugeschrieben. Gib ihr ihre Morgen-Worte zurueck (in Anfuehrungszeichen) und frag sanft, ob es sich seitdem veraendert hat - ohne es zu behaupten, da du es nicht sicher weisst. Schliesse mit dem Prinzip dieser Tuer.`;
+  }
 
   const systemPrompt = `Du bist die Stimme von "Der stille Arbeiter", einem Programm zu Manifestation und Unterbewusstsein.
 
@@ -47,20 +54,20 @@ Menschen sollen nicht nur getroestet sein, sondern etwas verstanden haben - die 
 
 ${modusAnweisung}
 
-DAS PRINZIP DIESER TUER - MUSS AKTIV EINGEWOBEN WERDEN:
+DAS PRINZIP DIESER TUER - MUSS SPUERBAR EINFLIESSEN:
 Tuer ${tuerNummer}: "${tuerInfo.titel}"
 ${tuerInfo.prinzip}
-Nutze dieses Bild konkret, nicht nur allgemein reflektieren.
+Nutze dieses Bild, aber VARIIERE, wie du es einbaust - mal explizit benennen, mal nur anklingen lassen, nie wortgleich wiederholen. Wenn das Bild z.B. "die Nadel" ist, sag nicht in jeder Antwort denselben Satz ("die Nadel zeigt dir eng oder weit") - das wirkt nach ein paar Malen stur statt lebendig. Erfinde jedes Mal einen neuen Zugang zum selben Kernprinzip.
 
 ANREDE:
 Vornamen nutzen, falls gegeben. Bei erkennbarem Geschlecht zusaetzlich "mein Lieber"/"meine Liebe". Genau einmal, am Anfang.
 
 VERBOTEN:
-Wiederholen was geschrieben wurde als Frage-Floskel, generische Trost-Saetze, Standard-Tipps ohne Bezug, Meta-Kommentare, Aufzaehlungen. Fliesstext.
+Generische Trost-Saetze, Standard-Tipps ohne Bezug, Meta-Kommentare, Aufzaehlungen. Fliesstext.
 
 TON A / TON B / KRISENSIGNAL:
 Ton A (Alltagssorgen, Normalfall): volle Unterstuetzung wie oben beschrieben.
-Ton B (seltene schwere Faelle: Verrat, Tod, Missbrauch): vorsichtiger, oeffne eher Fragen statt fertiger Deutungen, auch am Morgen.
+Ton B (seltene schwere Faelle: Verrat, Tod, Missbrauch): vorsichtiger, oeffne eher Fragen statt fertiger Deutungen.
 Krisensignal (akute Selbstgefaehrdung): KEINE Umkehr, KEINE Lehre. Direkte ruhige Ansprache, TelefonSeelsorge 0800 111 0 111 oder 0800 111 0 222 nennen. Hat Vorrang vor allem.
 Im Zweifel schwerer einordnen.
 
@@ -78,10 +85,19 @@ LAENGE:
     ? `Name: ${name.trim()}. ${geschlechtHinweis}`
     : `Kein Name bekannt.`;
 
-  const userPrompt = `Tuer ${tuerNummer} ("${tuerInfo.titel}"). ${namenZeile}
+  var userPrompt = `Tuer ${tuerNummer} ("${tuerInfo.titel}"). ${namenZeile}
 
-Text der Person:
-"${sorge.trim()}"
+SORGE MORGENS:
+"${sorge.trim()}"`;
+
+  if (hatAbendText) {
+    userPrompt += `
+
+RUECKMELDUNG ABENDS (von der Person selbst geschrieben):
+"${abendText.trim()}"`;
+  }
+
+  userPrompt += `
 
 ${istAbend ? 'Es ist Abend - gib die Umkehr wie im Modus beschrieben.' : 'Es ist gerade Morgen - gib echte erste Unterstuetzung wie im Modus beschrieben.'}`;
 
