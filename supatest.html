@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body>
+<h1 id="text" style="font-size:30px;text-align:center;margin-top:80px;">Warte...</h1>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  if(window.supabase){
+    document.body.style.background = 'lime';
+    document.getElementById('text').textContent = 'SUPABASE-VERBINDUNG LÄDT';
+  } else {
+    document.body.style.background = 'red';
+    document.getElementById('text').textContent = 'SUPABASE WIRD BLOCKIERT';
+  }
+</script>
+</body>
+</html>
