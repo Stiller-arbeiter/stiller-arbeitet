@@ -25,10 +25,11 @@
   .erfolg{color:var(--ember);}
   .card{background:var(--raised);border-radius:4px;padding:1.6rem;margin-top:1.5rem;}
   .card h2{font-family:'Fraunces',serif;font-weight:300;font-style:italic;font-size:1.2rem;margin-bottom:1rem;color:#d8c9b6;}
-  .umkehr-text{font-size:1.02rem;line-height:1.85;white-space:pre-wrap;}
+  .umkehr-text{font-size:1.02rem;line-height:1.85;white-space:pre-wrap;margin-top:1rem;}
   .versteckt{display:none;}
   .abschnitt{border-top:1px solid rgba(138,123,107,0.15);padding-top:2rem;margin-top:2rem;}
   .hinweis{font-size:0.85rem;color:var(--faded);text-align:center;margin-top:0.5rem;}
+  .laedt{color:var(--faded);font-style:italic;}
 </style>
 </head>
 <body>
@@ -51,17 +52,18 @@
 
       <div class="abschnitt" id="morgenBereich">
         <div class="card">
-          <h2>Morgen: die Sorge speichern</h2>
-          <label for="sorgeInput">Was drueckt gerade?</label>
+          <h2>Morgen: was drueckt gerade?</h2>
+          <label for="sorgeInput">Schreib es auf.</label>
           <textarea id="sorgeInput" placeholder="Ein Satz reicht."></textarea>
-          <button id="sorgeSpeichernBtn">Sorge speichern</button>
+          <button id="sorgeSpeichernBtn">Absenden</button>
           <div id="morgenMeldung"></div>
+          <div id="morgenAntwort" class="umkehr-text"></div>
         </div>
       </div>
 
       <div class="abschnitt" id="abendBereich">
         <div class="card">
-          <h2>Abend: die Umkehr holen</h2>
+          <h2>Abend: die Umkehr</h2>
           <p class="hinweis" id="abendHinweis">Hier erscheint deine Umkehr, sobald du sie holst.</p>
           <button id="umkehrHolenBtn">Die Umkehr holen</button>
           <div id="umkehrErgebnis" class="umkehr-text"></div>
@@ -147,12 +149,13 @@
 
   var sorgeSpeichernBtn = document.getElementById('sorgeSpeichernBtn');
   var morgenMeldung = document.getElementById('morgenMeldung');
+  var morgenAntwort = document.getElementById('morgenAntwort');
 
   sorgeSpeichernBtn.addEventListener('click', function(){
-    speichereSorge();
+    speichereSorgeUndAntworte();
   });
 
-  async function speichereSorge(){
+  async function speichereSorgeUndAntworte(){
     try {
       var text = document.getElementById('sorgeInput').value.trim();
       if(!text){
@@ -162,7 +165,9 @@
       }
 
       sorgeSpeichernBtn.disabled = true;
+      morgenMeldung.className = 'laedt';
       morgenMeldung.textContent = 'Wird gespeichert...';
+      morgenAntwort.textContent = '';
 
       var insertResult = await supabaseClient.from('sorgen').insert({
         user_id: aktuelleUserId,
@@ -177,8 +182,32 @@
         return;
       }
 
-      morgenMeldung.className = 'erfolg';
-      morgenMeldung.textContent = 'Gespeichert. Heute Abend kommt sie zurueck.';
+      morgenMeldung.className = 'laedt';
+      morgenMeldung.textContent = 'Ich schau mir das an...';
+
+      var response = await fetch('/api/Umkehr', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          sorge: text,
+          tuer: 1,
+          name: aktuellesProfil.vorname,
+          geschlecht: aktuellesProfil.geschlecht,
+          moment: 'morgen'
+        })
+      });
+
+      var data = await response.json();
+
+      if(!response.ok || !data.umkehr){
+        morgenMeldung.className = 'fehler';
+        morgenMeldung.textContent = 'Gespeichert, aber Antwort-Fehler: ' + (data.error || 'Unbekannt');
+        sorgeSpeichernBtn.disabled = false;
+        return;
+      }
+
+      morgenMeldung.textContent = '';
+      morgenAntwort.textContent = data.umkehr;
       sorgeSpeichernBtn.disabled = false;
 
     } catch (err) {
@@ -234,7 +263,8 @@
           sorge: sorgeText,
           tuer: 1,
           name: aktuellesProfil.vorname,
-          geschlecht: aktuellesProfil.geschlecht
+          geschlecht: aktuellesProfil.geschlecht,
+          moment: 'abend'
         })
       });
 
