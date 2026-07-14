@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anmelden - Der stille Arbeiter</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--ground:#12100E;--raised:#1C1814;--read:#E8DFD2;--faded:#8A7B6B;--ember:#B8703F;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--ground);color:var(--read);font-family:'Newsreader',Georgia,serif;font-weight:300;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:6vh 7vw;line-height:1.8;}
+  .card{max-width:420px;width:100%;}
+  .eyebrow{font-family:'Fraunces',serif;text-transform:uppercase;letter-spacing:0.26em;font-size:0.7rem;color:var(--faded);margin-bottom:1.6rem;text-align:center;}
+  h1{font-family:'Fraunces',serif;font-weight:300;font-size:1.8rem;margin-bottom:2rem;line-height:1.35;text-align:center;}
+  label{display:block;font-size:0.85rem;color:var(--faded);margin-bottom:0.4rem;margin-top:1.1rem;}
+  input{width:100%;background:var(--raised);border:1px solid rgba(138,123,107,0.25);border-radius:3px;color:var(--read);font-family:'Newsreader',Georgia,serif;font-size:1.02rem;font-weight:300;padding:0.85rem 1rem;}
+  input:focus{outline:none;border-color:rgba(184,112,63,0.6);}
+  button{width:100%;margin-top:1.8rem;font-family:'Fraunces',serif;font-size:1rem;color:var(--read);background:transparent;border:1px solid rgba(184,112,63,0.5);border-radius:2px;padding:0.9rem;cursor:pointer;transition:all 0.35s ease;}
+  button:hover:not(:disabled){border-color:var(--ember);background:rgba(184,112,63,0.08);}
+  button:disabled{opacity:0.45;cursor:default;}
+  #meldung{margin-top:1.5rem;font-size:0.95rem;text-align:center;min-height:1.5em;word-break:break-word;}
+  .fehler{color:#e08050;font-weight:400;}
+  .erfolg{color:var(--ember);}
+  .profil-box{margin-top:2rem;padding:1.2rem;background:var(--raised);border-radius:3px;font-size:0.9rem;color:var(--faded);display:none;}
+  .profil-box.zeigen{display:block;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="eyebrow">Anmelden</div>
+    <h1>Willkommen zurueck</h1>
+    <label for="email">E-Mail</label>
+    <input id="email" type="email" placeholder="deine@email.de" />
+    <label for="passwort">Passwort</label>
+    <input id="passwort" type="password" placeholder="Dein Passwort" />
+    <button id="btn">Anmelden</button>
+    <div id="meldung">Bereit.</div>
+    <div id="profilBox" class="profil-box"></div>
+  </div>
+<script>
+  var meldung = document.getElementById('meldung');
+  var btn = document.getElementById('btn');
+  var profilBox = document.getElementById('profilBox');
+
+  var supabaseClient;
+  try {
+    var SUPABASE_URL = 'https://kkgpsjlchcfrkcfhbgtp.supabase.co';
+    var SUPABASE_KEY = 'sb_publishable_L2hwq-MPg-2ZdCd6Dw2RUA_Hw_oT0vp';
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    meldung.textContent = 'Verbindung bereit.';
+  } catch (err) {
+    meldung.className = 'fehler';
+    meldung.textContent = 'VERBINDUNGS-FEHLER: ' + (err && err.message ? err.message : String(err));
+  }
+
+  btn.addEventListener('click', function(){
+    handleLogin();
+  });
+
+  async function handleLogin(){
+    try {
+      var email = document.getElementById('email').value.trim();
+      var passwort = document.getElementById('passwort').value;
+
+      if(!email || !passwort){
+        meldung.className = 'fehler';
+        meldung.textContent = 'E-Mail und Passwort eingeben.';
+        return;
+      }
+
+      btn.disabled = true;
+      meldung.className = '';
+      meldung.textContent = 'Du wirst angemeldet...';
+      profilBox.className = 'profil-box';
+
+      var loginResult = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: passwort
+      });
+
+      if(loginResult.error){
+        meldung.className = 'fehler';
+        meldung.textContent = 'FEHLER BEIM ANMELDEN: ' + loginResult.error.message;
+        btn.disabled = false;
+        return;
+      }
+
+      var userId = loginResult.data.user.id;
+
+      var profilResult = await supabaseClient
+        .from('profile')
+        .select('vorname, nachname, geburtstag, geschlecht')
+        .eq('id', userId)
+        .single();
+
+      if(profilResult.error){
+        meldung.className = 'fehler';
+        meldung.textContent = 'Angemeldet, aber PROFIL-FEHLER: ' + profilResult.error.message;
+        btn.disabled = false;
+        return;
+      }
+
+      var profil = profilResult.data;
+
+      meldung.className = 'erfolg';
+      meldung.textContent = 'Willkommen zurueck, ' + profil.vorname + '.';
+
+      profilBox.className = 'profil-box zeigen';
+      profilBox.innerHTML =
+        '<strong>Geladenes Profil:</strong><br>' +
+        'Vorname: ' + profil.vorname + '<br>' +
+        'Nachname: ' + (profil.nachname || '-') + '<br>' +
+        'Geburtstag: ' + (profil.geburtstag || '-') + '<br>' +
+        'Geschlecht: ' + (profil.geschlecht || '-');
+
+      btn.disabled = false;
+
+    } catch (err) {
+      meldung.className = 'fehler';
+      meldung.textContent = 'UNERWARTETER FEHLER: ' + (err && err.message ? err.message : String(err));
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
