@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zugang — Der stille Arbeiter</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--ground:#12100E;--raised:#1C1814;--read:#E8DFD2;--faded:#8A7B6B;--ember:#B8703F;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--ground);color:var(--read);font-family:'Newsreader',Georgia,serif;font-weight:300;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:6vh 7vw;line-height:1.8;}
+  .card{max-width:480px;width:100%;}
+  .eyebrow{font-family:'Fraunces',serif;text-transform:uppercase;letter-spacing:0.26em;font-size:0.7rem;color:var(--faded);margin-bottom:1.6rem;text-align:center;}
+  h1{font-family:'Fraunces',serif;font-weight:300;font-size:1.8rem;margin-bottom:2rem;line-height:1.35;text-align:center;}
+  label{display:block;font-size:0.85rem;color:var(--faded);margin-bottom:0.4rem;margin-top:1.1rem;}
+  input, select{width:100%;background:var(--raised);border:1px solid rgba(138,123,107,0.25);border-radius:3px;color:var(--read);font-family:'Newsreader',Georgia,serif;font-size:1.02rem;font-weight:300;padding:0.85rem 1rem;}
+  input:focus, select:focus{outline:none;border-color:rgba(184,112,63,0.6);}
+  .row{display:flex;gap:12px;}
+  .row > div{flex:1;}
+  button{width:100%;margin-top:1.8rem;font-family:'Fraunces',serif;font-size:1rem;color:var(--read);background:transparent;border:1px solid rgba(184,112,63,0.5);border-radius:2px;padding:0.9rem;cursor:pointer;transition:all 0.35s ease;}
+  button:hover:not(:disabled){border-color:var(--ember);background:rgba(184,112,63,0.08);}
+  button:disabled{opacity:0.45;cursor:default;}
+  #status{margin-top:1.5rem;font-size:0.95rem;text-align:center;min-height:1.5em;word-break:break-word;}
+  .fehler{color:#e08050;font-weight:400;}
+  .erfolg{color:var(--ember);}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="eyebrow">Zugang</div>
+    <h1>Bevor die erste Tür sich öffnet</h1>
+    <label for="vorname">Vorname</label>
+    <input id="vorname" placeholder="Dein Vorname" />
+    <label for="nachname">Nachname</label>
+    <input id="nachname" placeholder="Dein Nachname" />
+    <div class="row">
+      <div>
+        <label for="geburtstag">Geburtstag</label>
+        <input id="geburtstag" type="date" />
+      </div>
+      <div>
+        <label for="geschlecht">Geschlecht</label>
+        <select id="geschlecht">
+          <option value="">bitte wählen</option>
+          <option value="m">männlich</option>
+          <option value="w">weiblich</option>
+          <option value="divers">divers / keine Angabe</option>
+        </select>
+      </div>
+    </div>
+    <label for="email">E-Mail</label>
+    <input id="email" type="email" placeholder="deine@email.de" />
+    <label for="passwort">Passwort</label>
+    <input id="passwort" type="password" placeholder="Mindestens 6 Zeichen" />
+    <button id="btn">Zugang anlegen</button>
+    <div id="status">Bereit.</div>
+  </div>
+<script>
+  alert('NEUE VERSION LÄUFT');
+
+  const status = document.getElementById('status');
+  const btn = document.getElementById('btn');
+
+  window.addEventListener('error', function(e){
+    status.className = 'fehler';
+    status.textContent = 'SEITEN-FEHLER: ' + e.message;
+  });
+
+  let supabase;
+  try {
+    const SUPABASE_URL = 'https://kkgpsjlchcfrkcfhbgtp.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_L2hwq-MPg-2ZdCd6Dw2RUA_Hw_oT0vp';
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    status.textContent = 'Verbindung bereit. Formular ausfüllen und Knopf drücken.';
+  } catch (err) {
+    status.className = 'fehler';
+    status.textContent = 'VERBINDUNGS-FEHLER BEIM LADEN: ' + (err && err.message ? err.message : String(err));
+  }
+
+  btn.addEventListener('click', async function(){
+    try {
+      const vorname = document.getElementById('vorname').value.trim();
+      const nachname = document.getElementById('nachname').value.trim();
+      const geburtstag = document.getElementById('geburtstag').value;
+      const geschlecht = document.getElementById('geschlecht').value;
+      const email = document.getElementById('email').value.trim();
+      const passwort = document.getElementById('passwort').value;
+
+      if(!vorname || !email || !passwort){
+        status.className = 'fehler';
+        status.textContent = 'Vorname, E-Mail und Passwort sind Pflicht.';
+        return;
+      }
+      if(passwort.length < 6){
+        status.className = 'fehler';
+        status.textContent = 'Das Passwort muss mindestens 6 Zeichen haben.';
+        return;
+      }
+
+      btn.disabled = true;
+      status.className = '';
+      status.textContent = 'Dein Zugang wird angelegt…';
+
+      const signUpResult = await supabase.auth.signUp({ email: email, password: passwort });
+      const authError = signUpResult.error;
+      const authData = signUpResult.data;
+
+      if(authError){
+        status.className = 'fehler';
+        status.textContent = 'FEHLER BEI ANMELDUNG: ' + authError.message;
+        btn.disabled = false;
+        return;
+      }
+
+      const userId = (authData && authData.user) ? authData.user.id : null;
+
+      if(!userId){
+        status.className = 'fehler';
+        status.textContent = 'Kein User-Objekt erhalten. Eventuell ist E-Mail-Bestätigung aktiv oder die E-Mail existiert schon.';
+        btn.disabled = false;
+        return;
+      }
+
+      const profilResult = await supabase.from('profile').insert({
+        id: userId,
+        vorname: vorname,
+        nachname: nachname || null,
+        geburtstag: geburtstag || null,
+        geschlecht: geschlecht || null
+      });
+
+      if(profilResult.error){
+        status.className = 'fehler';
+        status.textContent = 'Konto wurde angelegt, aber PROFIL-FEHLER: ' + profilResult.error.message;
+        btn.disabled = false;
+        return;
+      }
+
+      status.className = 'erfolg';
+      status.textContent = 'Willkommen, ' + vorname + '. Dein Zugang steht. Prüf deine E-Mail zur Bestätigung.';
+      btn.disabled = false;
+
+    } catch (err) {
+      status.className = 'fehler';
+      status.textContent = 'UNERWARTETER FEHLER: ' + (err && err.message ? err.message : String(err));
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
