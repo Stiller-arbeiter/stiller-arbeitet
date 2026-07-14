@@ -15,7 +15,7 @@
   h1{font-family:'Fraunces',serif;font-weight:300;font-size:1.6rem;margin-bottom:1.8rem;text-align:center;}
   label{display:block;font-size:0.85rem;color:var(--faded);margin-bottom:0.4rem;margin-top:1.1rem;}
   input, textarea{width:100%;background:var(--raised);border:1px solid rgba(138,123,107,0.25);border-radius:3px;color:var(--read);font-family:'Newsreader',Georgia,serif;font-size:1.02rem;font-weight:300;padding:0.85rem 1rem;}
-  textarea{min-height:100px;resize:vertical;}
+  textarea{min-height:90px;resize:vertical;}
   input:focus, textarea:focus{outline:none;border-color:rgba(184,112,63,0.6);}
   button{width:100%;margin-top:1.5rem;font-family:'Fraunces',serif;font-size:1rem;color:var(--read);background:transparent;border:1px solid rgba(184,112,63,0.5);border-radius:2px;padding:0.9rem;cursor:pointer;}
   button:hover:not(:disabled){border-color:var(--ember);background:rgba(184,112,63,0.08);}
@@ -30,6 +30,7 @@
   .abschnitt{border-top:1px solid rgba(138,123,107,0.15);padding-top:2rem;margin-top:2rem;}
   .hinweis{font-size:0.85rem;color:var(--faded);text-align:center;margin-top:0.5rem;}
   .laedt{color:var(--faded);font-style:italic;}
+  .optional{font-size:0.78rem;color:#5a5148;margin-top:0.3rem;}
 </style>
 </head>
 <body>
@@ -63,9 +64,12 @@
 
       <div class="abschnitt" id="abendBereich">
         <div class="card">
-          <h2>Abend: die Umkehr</h2>
-          <p class="hinweis" id="abendHinweis">Hier erscheint deine Umkehr, sobald du sie holst.</p>
+          <h2>Abend: wie geht es dir jetzt?</h2>
+          <label for="abendInput">Schreib, wie's dir geht - besser, schlechter, warum. Kannst du auch leer lassen.</label>
+          <textarea id="abendInput" placeholder="Zum Beispiel: Es ist besser geworden, weil... / Es ist immer noch schwer, weil..."></textarea>
+          <p class="optional">Optional. Leer lassen geht auch.</p>
           <button id="umkehrHolenBtn">Die Umkehr holen</button>
+          <p class="hinweis" id="abendHinweis"></p>
           <div id="umkehrErgebnis" class="umkehr-text"></div>
         </div>
       </div>
@@ -228,8 +232,11 @@
   async function holeUmkehr(){
     try {
       umkehrHolenBtn.disabled = true;
+      abendHinweis.className = 'hinweis';
       abendHinweis.textContent = 'Deine Sorge von heute wird gesucht...';
       umkehrErgebnis.textContent = '';
+
+      var abendText = document.getElementById('abendInput').value.trim();
 
       var sorgenResult = await supabaseClient
         .from('sorgen')
@@ -240,20 +247,29 @@
         .limit(1);
 
       if(sorgenResult.error){
-        abendHinweis.className = 'fehler';
+        abendHinweis.className = 'hinweis fehler';
         abendHinweis.textContent = 'FEHLER BEIM LADEN: ' + sorgenResult.error.message;
         umkehrHolenBtn.disabled = false;
         return;
       }
 
       if(!sorgenResult.data || sorgenResult.data.length === 0){
-        abendHinweis.className = 'fehler';
-        abendHinweis.textContent = 'Keine Sorge gefunden. Speichere zuerst eine.';
+        abendHinweis.className = 'hinweis fehler';
+        abendHinweis.textContent = 'Keine Sorge gefunden. Speichere zuerst eine im Morgen-Bereich.';
         umkehrHolenBtn.disabled = false;
         return;
       }
 
       var sorgeText = sorgenResult.data[0].text;
+
+      if(abendText){
+        await supabaseClient.from('journal').insert({
+          user_id: aktuelleUserId,
+          tuer: 1,
+          text: abendText
+        });
+      }
+
       abendHinweis.textContent = 'Der Abend schaut auf deine Worte...';
 
       var response = await fetch('/api/Umkehr', {
@@ -261,6 +277,7 @@
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
           sorge: sorgeText,
+          abendText: abendText,
           tuer: 1,
           name: aktuellesProfil.vorname,
           geschlecht: aktuellesProfil.geschlecht,
@@ -271,7 +288,7 @@
       var data = await response.json();
 
       if(!response.ok || !data.umkehr){
-        abendHinweis.className = 'fehler';
+        abendHinweis.className = 'hinweis fehler';
         abendHinweis.textContent = 'FEHLER: ' + (data.error || 'Unbekannt');
         umkehrHolenBtn.disabled = false;
         return;
@@ -282,7 +299,7 @@
       umkehrHolenBtn.disabled = false;
 
     } catch (err) {
-      abendHinweis.className = 'fehler';
+      abendHinweis.className = 'hinweis fehler';
       abendHinweis.textContent = 'UNERWARTETER FEHLER: ' + (err && err.message ? err.message : String(err));
       umkehrHolenBtn.disabled = false;
     }
