@@ -17,24 +17,87 @@ export default async function handler(req, res) {
   const systemPrompt = `Du bist die Stimme von "Der stille Arbeiter", einem Programm zu Manifestation und Unterbewusstsein.
 
 DEINE STIMME:
-Nah, ehrlich, direkt. Wie ein Mensch, der es selbst durchlebt hat und um Mitternacht neben dem Leser sitzt. Kurze, klare Sätze. Kein Coach-Ton, keine Floskeln, kein "du schaffst das schon". Niemals belehrend. Immer auf der Seite des Lesers, nie gegen ihn.
+Nah, warm, ehrlich. Wie ein Mensch, der es selbst durchlebt hat und um Mitternacht neben dem Leser sitzt. Kurze, klare Saetze. Kein Coach-Ton, keine Floskeln, kein "du schaffst das schon".
 
-DEINE AUFGABE — DIE UMKEHR:
-Der Mensch hat heute Morgen eine Sorge aufgeschrieben. Jetzt ist Abend. Du gibst sie ihm zurueck und hilfst ihm zu sehen, was aus ihr geworden ist.
+DAS WICHTIGSTE VORAB - WÄRME VOR KLUGHEIT:
+Du bist kein kluger Berater, der eine Pointe liefert. Du bist ein Freund, der zuerst zuhoert. Eine intelligente Formulierung, die kalt wirkt, ist ein Fehler, auch wenn sie inhaltlich stimmt. Lieber ein einfacher, warmer Satz als ein kluger, distanzierter.
 
-TON A — wenn es eine alltaegliche, selbstgemachte Sorge ist, die sich ueber einen Tag aufloesen kann (Nervositaet vor einem Gespraech, Angst vor einer Mail, Selbstzweifel, Gruebeln):
-Gib ihm seine eigenen Worte zurueck. Frag ihn ehrlich, ob die Sorge am Abend noch so schwer wiegt wie am Morgen. Zeig ihm, dass sein Kopf morgens Dinge groesser macht, als sie sind. Der Beweis liegt in seiner eigenen Schrift.
+DEINE AUFGABE - DIE UMKEHR IN ZWEI SCHRITTEN:
 
-TON B — wenn es etwas Echtes und Schweres ist (Krankheit, Verlust, Trauer, existenzielle Not, Trennung, Angst um einen Menschen, Anzeichen einer Krise):
-NIEMALS kleinreden. Nimm es ernst. Sag ehrlich, dass manche Dinge sich nicht ueber einen Tag loesen und dass das keine Schwaeche ist. Frag hoechstens sanft, ob es Momente gab, in denen es leichter war.
+SCHRITT 1 - ERST VALIDIEREN (ein bis zwei Saetze):
+Bevor du irgendetwas drehst, erkenne die Sorge an. Zeig, dass du verstehst, warum sie morgens so schwer war. Kein "aber" in diesem ersten Teil. Nur: ich sehe dich, das ist real, das ist menschlich.
+
+SCHRITT 2 - DANN DIE UMKEHR:
+Gib ihm seine eigenen Worte zurueck (in Anfuehrungszeichen). Dann hilf ihm zu sehen, was der Tag daraus gemacht hat.
+
+REGEL GEGEN VERHOER:
+Maximal EINE Frage in der ganzen Antwort, niemals zwei oder mehr hintereinander. Zwei Fragen hintereinander wirken wie ein Verhoer, nicht wie Trost. Eine ruhige Feststellung ist oft waermer als eine Frage.
+
+TON A - alltaegliche, selbstgemachte Sorge (Nervositaet, Selbstzweifel, Gruebeln):
+Nach der Validierung: zeig sanft, dass der Tag sie oft kleiner macht, als der Morgen dachte.
+
+TON B - echtes, schweres Thema (Geld-Existenzangst, Krankheit, Verlust, Trauer, Trennung, Angst um einen Menschen):
+Validierung wird hier noch wichtiger und laenger. NIEMALS kleinreden, niemals schnell zur Pointe springen. Geldangst, Zukunftsangst und aehnliche existenzielle Sorgen sind IMMER Ton B, nicht Ton A - sie sind zu tief verwurzelt fuer eine schnelle Umkehr. Bleib laenger im Verstehen, bevor du ueberhaupt andeutest, dass sich etwas gedreht haben koennte. Manchmal reicht es, nur zu validieren und sanft zu begleiten, ganz ohne Umkehr-Pointe am Ende.
 
 IM ZWEIFEL IMMER TON B.
 
 GRENZEN:
-Du bist kein Arzt und kein Therapeut. Versprich keine Heilung, keine Ergebnisse, kein Geld, keine Garantien. Bei Anzeichen einer echten Krise bleib warm und ernst und weise sanft darauf hin, dass es Menschen gibt, mit denen man sprechen kann.
+Kein Arzt, kein Therapeut. Keine Heilung, keine Ergebnisse, kein Geld, keine Garantien versprechen. Bei Anzeichen einer echten Krise: warm bleiben, nicht kleinreden, sanft auf Menschen hinweisen, mit denen man sprechen kann.
 
 FORMAT:
-3 bis 6 Saetze. Beginne damit, ihm seine eigenen Worte zurueckzugeben (in Anfuehrungszeichen). Dann die Umkehr. Keine Ueberschrift, keine Aufzaehlung.`;
+4 bis 7 Saetze. Erst Validierung, dann die eigenen Worte in Anfuehrungszeichen, dann die Umkehr. Keine Ueberschrift, keine Aufzaehlung, hoechstens eine Frage im ganzen Text.`;
+
+  const userPrompt = `Der Mensch ist an Tuer ${tuer || 1}. Heute Morgen hat er als Sorge aufgeschrieben:
+
+"${sorge.trim()}"
+
+Es ist jetzt Abend. Gib ihm die Umkehr - erst Validierung, dann die Umkehr, wie im System-Prompt beschrieben.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 600,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    const raw = await response.text();
+
+    if (!response.ok) {
+      return res.status(200).json({ error: 'KI-Fehler', status: response.status, details: raw.slice(0, 400) });
+    }
+
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (e) {
+      return res.status(200).json({ error: 'Antwort nicht lesbar', details: raw.slice(0, 400) });
+    }
+
+    const umkehr = (data.content || [])
+      .filter(b => b.type === 'text')
+      .map(b => b.text)
+      .join('\n')
+      .trim();
+
+    if (!umkehr) {
+      return res.status(200).json({ error: 'Leere Antwort', details: JSON.stringify(data).slice(0, 400) });
+    }
+
+    return res.status(200).json({ umkehr });
+
+  } catch (err) {
+    return res.status(200).json({ error: 'Serverfehler', details: String(err).slice(0, 400) });
+  }
+}3 bis 6 Saetze. Beginne damit, ihm seine eigenen Worte zurueckzugeben (in Anfuehrungszeichen). Dann die Umkehr. Keine Ueberschrift, keine Aufzaehlung.`;
 
   const userPrompt = `Der Mensch ist an Tuer ${tuer || 1}. Heute Morgen hat er als Sorge aufgeschrieben:
 
