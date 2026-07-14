@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zugang</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body{background:#12100E;color:#E8DFD2;font-family:sans-serif;padding:40px;}
+  input, select{width:100%;padding:10px;margin-top:10px;background:#1C1814;color:#E8DFD2;border:1px solid #555;}
+  button{width:100%;padding:14px;margin-top:20px;background:#333;color:#fff;border:1px solid #B8703F;}
+  #meldung{margin-top:20px;font-size:16px;}
+</style>
+</head>
+<body>
+  <h1>Zugang anlegen</h1>
+  <label>Vorname</label>
+  <input id="vorname" placeholder="Vorname" />
+  <label>E-Mail</label>
+  <input id="email" type="email" placeholder="E-Mail" />
+  <label>Passwort</label>
+  <input id="passwort" type="password" placeholder="Passwort" />
+  <button id="btn">Zugang anlegen</button>
+  <div id="meldung">Startzustand</div>
+
+<script>
+  var meldung = document.getElementById("meldung");
+  var btn = document.getElementById("btn");
+
+  meldung.textContent = "Skript hat geladen, Basis-JS laeuft";
+
+  try {
+    var SUPABASE_URL = "https://kkgpsjlchcfrkcfhbgtp.supabase.co";
+    var SUPABASE_KEY = "sb_publishable_L2hwq-MPg-2ZdCd6Dw2RUA_Hw_oT0vp";
+    var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    meldung.textContent = "Verbindung aufgebaut, bereit zum Testen";
+  } catch (err) {
+    meldung.textContent = "FEHLER: " + err.message;
+  }
+
+  btn.addEventListener("click", function(){
+    meldung.textContent = "Knopf wurde gedrueckt, Klick-Funktion laeuft";
+  });
+</script>
+</body>
+</html>
