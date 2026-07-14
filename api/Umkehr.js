@@ -1,3 +1,7 @@
+export const config = {
+  maxDuration: 30,
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Nur POST erlaubt' });
@@ -73,62 +77,6 @@ Es ist jetzt Abend. Gib ihm die Umkehr - erst Validierung, dann die Umkehr, wie 
 
     if (!response.ok) {
       return res.status(200).json({ error: 'KI-Fehler', status: response.status, details: raw.slice(0, 400) });
-    }
-
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch (e) {
-      return res.status(200).json({ error: 'Antwort nicht lesbar', details: raw.slice(0, 400) });
-    }
-
-    const umkehr = (data.content || [])
-      .filter(b => b.type === 'text')
-      .map(b => b.text)
-      .join('\n')
-      .trim();
-
-    if (!umkehr) {
-      return res.status(200).json({ error: 'Leere Antwort', details: JSON.stringify(data).slice(0, 400) });
-    }
-
-    return res.status(200).json({ umkehr });
-
-  } catch (err) {
-    return res.status(200).json({ error: 'Serverfehler', details: String(err).slice(0, 400) });
-  }
-}3 bis 6 Saetze. Beginne damit, ihm seine eigenen Worte zurueckzugeben (in Anfuehrungszeichen). Dann die Umkehr. Keine Ueberschrift, keine Aufzaehlung.`;
-
-  const userPrompt = `Der Mensch ist an Tuer ${tuer || 1}. Heute Morgen hat er als Sorge aufgeschrieben:
-
-"${sorge.trim()}"
-
-Es ist jetzt Abend. Gib ihm die Umkehr.`;
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 600,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
-      })
-    });
-
-    const raw = await response.text();
-
-    if (!response.ok) {
-      return res.status(200).json({
-        error: 'KI-Fehler',
-        status: response.status,
-        details: raw.slice(0, 400)
-      });
     }
 
     let data;
