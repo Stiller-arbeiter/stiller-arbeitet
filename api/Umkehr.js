@@ -50,7 +50,12 @@ export default async function handler(req, res) {
   var modusAnweisung;
   if (!istAbend) {
     modusAnweisung = `MODUS: MORGEN - ECHTE ERSTE UNTERSTUETZUNG.
-Die Person schreibt das gerade JETZT, am Morgen, zum ersten Mal auf. Sie braucht jetzt echte Unterstuetzung, keine Vertroestung auf spaeter. Gib eine vollwertige, warme Antwort mit dem Prinzip dieser Tuer. Schliesse nicht komplett ab - das ist erst der Start in den Tag. Ende offen und tragend, z.B. "trag das heute mit dir, wir schauen es uns heute Abend gemeinsam nochmal an". Nicht kalt, nicht buerokratisch.`;
+Die Person schreibt das gerade JETZT, am Morgen, zum ersten Mal auf. Sie braucht jetzt echte Unterstuetzung, keine Vertroestung auf spaeter. Gib eine vollwertige, warme Antwort mit dem Prinzip dieser Tuer.
+
+WICHTIG - DER GRIFF FUER DEN TAG MUSS KONKRET SEIN, NICHT PHILOSOPHISCH:
+Am Ende brauchst du EINE einzige, wirklich greifbare Handlung fuer heute - keine vage Aufforderung wie "spuer, wo es eng ist" oder "lass Raum". Das ist zu weich, das hilft niemandem konkret durch den Tag. Die Handlung muss so klar sein, dass die Person genau weiss, was sie um 14 Uhr im Buero tun soll. Beispiele fuer den Unterschied (nicht kopieren, nur Kalibrierung): STATT "spuer in dich hinein" -> "wenn du heute merkst, dass sich deine Brust zusammenzieht, leg kurz die Hand drauf und atme einmal bewusst aus, bevor du weitermachst". STATT "lass Raum" -> "schreib dir auf dein Handy einen Reminder um 15 Uhr: eine Frage - eng oder weit gerade?". Die Handlung soll aus der KONKRETEN Sorge der Person geboren sein, nicht generisch sein.
+
+Schliesse nicht komplett ab - das ist erst der Start in den Tag. Der letzte Satz ist ein warmer, offener Ausblick, z.B. "trag das heute mit dir, wir schauen es uns heute Abend gemeinsam nochmal an". Nicht kalt, nicht buerokratisch.`;
   } else if (hatAbendText) {
     modusAnweisung = `MODUS: ABEND - MIT ECHTER RUECKMELDUNG DER PERSON.
 Die Person hat morgens diese Sorge geschrieben (unten als SORGE MORGENS). Jetzt ist Abend, und sie hat SELBST aufgeschrieben, wie es ihr jetzt geht (unten als RUECKMELDUNG ABENDS). Das ist keine Vermutung von dir - nutze genau das, was sie geschrieben hat. Wenn sie sagt, es ist besser geworden: bestaetige das ehrlich und zeig, warum das zum Prinzip dieser Tuer passt. Wenn sie sagt, es ist immer noch schwer: nimm das ernst, rede es nicht klein, aber biete trotzdem die Tuer-Lehre als neuen Blickwinkel an. Gib ihre eigenen Worte aus beiden Texten zurueck (kurz, in Anfuehrungszeichen). Schliesse mit dem Prinzip dieser Tuer.`;
