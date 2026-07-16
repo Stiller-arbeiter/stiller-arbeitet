@@ -49,6 +49,14 @@
         </select>
       </div>
     </div>
+    <label for="themenpfad">Welches Thema beschaeftigt dich gerade am meisten?</label>
+    <select id="themenpfad">
+      <option value="">bitte waehlen</option>
+      <option value="geld">Geld</option>
+      <option value="liebe">Liebe</option>
+      <option value="gesundheit">Gesundheit</option>
+      <option value="identitaet">Identitaet</option>
+    </select>
     <label for="email">E-Mail</label>
     <input id="email" type="email" placeholder="deine@email.de" />
     <label for="passwort">Passwort</label>
@@ -81,6 +89,7 @@
       var nachname = document.getElementById('nachname').value.trim();
       var geburtstag = document.getElementById('geburtstag').value;
       var geschlecht = document.getElementById('geschlecht').value;
+      var themenpfad = document.getElementById('themenpfad').value;
       var email = document.getElementById('email').value.trim();
       var passwort = document.getElementById('passwort').value;
 
@@ -122,7 +131,8 @@
         vorname: vorname,
         nachname: nachname || null,
         geburtstag: geburtstag || null,
-        geschlecht: geschlecht || null
+        geschlecht: geschlecht || null,
+        themenpfad: themenpfad || null
       });
 
       if(profilResult.error){
