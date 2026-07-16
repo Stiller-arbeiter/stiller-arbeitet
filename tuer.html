@@ -147,7 +147,7 @@
 
       var profilResult = await supabaseClient
         .from('profile')
-        .select('vorname, geschlecht')
+        .select('vorname, geschlecht, themenpfad')
         .eq('id', aktuelleUserId)
         .single();
 
@@ -233,6 +233,7 @@
           tuer: tuerNummer,
           name: aktuellesProfil.vorname,
           geschlecht: aktuellesProfil.geschlecht,
+          themenpfad: aktuellesProfil.themenpfad,
           moment: 'morgen'
         })
       });
@@ -317,6 +318,7 @@
           tuer: tuerNummer,
           name: aktuellesProfil.vorname,
           geschlecht: aktuellesProfil.geschlecht,
+          themenpfad: aktuellesProfil.themenpfad,
           moment: 'abend'
         })
       });
