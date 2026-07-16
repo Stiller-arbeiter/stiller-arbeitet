@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Nur POST erlaubt' });
   }
 
-  const { sorge, abendText, tuer, name, geschlecht, moment } = req.body || {};
+  const { sorge, abendText, tuer, name, geschlecht, moment, themenpfad } = req.body || {};
 
   if (!sorge || typeof sorge !== 'string' || sorge.trim().length === 0) {
     return res.status(400).json({ error: 'Keine Sorge uebermittelt' });
@@ -24,9 +24,16 @@ export default async function handler(req, res) {
   var SUPABASE_KEY = 'sb_publishable_L2hwq-MPg-2ZdCd6Dw2RUA_Hw_oT0vp';
 
   var tuerInfo;
+  var themenpfadFrage = null;
   try {
+    var spalte = 'titel,prinzip';
+    if (themenpfad === 'geld') spalte += ',journal_frage_geld';
+    else if (themenpfad === 'liebe') spalte += ',journal_frage_liebe';
+    else if (themenpfad === 'gesundheit') spalte += ',journal_frage_gesundheit';
+    else if (themenpfad === 'identitaet') spalte += ',journal_frage_identitaet';
+
     var dbResponse = await fetch(
-      SUPABASE_URL + '/rest/v1/tueren_content?tuer=eq.' + tuerNummer + '&select=titel,prinzip',
+      SUPABASE_URL + '/rest/v1/tueren_content?tuer=eq.' + tuerNummer + '&select=' + spalte,
       {
         headers: {
           'apikey': SUPABASE_KEY,
@@ -37,6 +44,10 @@ export default async function handler(req, res) {
     var dbData = await dbResponse.json();
     if (dbData && dbData.length > 0) {
       tuerInfo = { titel: dbData[0].titel, prinzip: dbData[0].prinzip };
+      if (themenpfad === 'geld') themenpfadFrage = dbData[0].journal_frage_geld;
+      else if (themenpfad === 'liebe') themenpfadFrage = dbData[0].journal_frage_liebe;
+      else if (themenpfad === 'gesundheit') themenpfadFrage = dbData[0].journal_frage_gesundheit;
+      else if (themenpfad === 'identitaet') themenpfadFrage = dbData[0].journal_frage_identitaet;
     } else {
       tuerInfo = { titel: 'Die Nadel in deiner Brust', prinzip: 'Das eigene Gefuehl als Kompass lesen - eng oder weit.' };
     }
@@ -47,18 +58,22 @@ export default async function handler(req, res) {
   var istAbend = moment === 'abend';
   var hatAbendText = istAbend && abendText && abendText.trim().length > 0;
 
+  var themenpfadZeile = themenpfadFrage
+    ? `\n\nTHEMENPFAD DIESER PERSON: ${themenpfad}. Die zu ihrem Pfad passende Zuspitzung, die du im Hinterkopf behalten kannst (nicht wortwoertlich abfragen, nur als Farbe fuer deine Antwort nutzen): "${themenpfadFrage}"`
+    : '';
+
   var modusAnweisung;
   if (!istAbend) {
     modusAnweisung = `MODUS: MORGEN - ECHTE ERSTE UNTERSTUETZUNG.
 Die Person schreibt das gerade JETZT, am Morgen, zum ersten Mal auf. Sie braucht jetzt echte Unterstuetzung, keine Vertroestung auf spaeter. Gib eine vollwertige, warme Antwort mit dem Prinzip dieser Tuer.
 
 WICHTIG - DER GRIFF FUER DEN TAG MUSS KONKRET SEIN, NICHT PHILOSOPHISCH:
-Am Ende brauchst du EINE einzige, wirklich greifbare Handlung fuer heute - keine vage Aufforderung wie "spuer, wo es eng ist" oder "lass Raum". Das ist zu weich, das hilft niemandem konkret durch den Tag. Die Handlung muss so klar sein, dass die Person genau weiss, was sie um 14 Uhr im Buero tun soll. Beispiele fuer den Unterschied (nicht kopieren, nur Kalibrierung): STATT "spuer in dich hinein" -> "wenn du heute merkst, dass sich deine Brust zusammenzieht, leg kurz die Hand drauf und atme einmal bewusst aus, bevor du weitermachst". STATT "lass Raum" -> "schreib dir auf dein Handy einen Reminder um 15 Uhr: eine Frage - eng oder weit gerade?". Die Handlung soll aus der KONKRETEN Sorge der Person geboren sein, nicht generisch sein.
+Am Ende brauchst du EINE einzige, wirklich greifbare Handlung fuer heute - keine vage Aufforderung wie "spuer, wo es eng ist" oder "lass Raum". Die Handlung muss so klar sein, dass die Person genau weiss, was sie um 14 Uhr im Buero tun soll. Die Handlung soll aus der KONKRETEN Sorge der Person geboren sein, nicht generisch sein.
 
 Schliesse nicht komplett ab - das ist erst der Start in den Tag. Der letzte Satz ist ein warmer, offener Ausblick, z.B. "trag das heute mit dir, wir schauen es uns heute Abend gemeinsam nochmal an". Nicht kalt, nicht buerokratisch.`;
   } else if (hatAbendText) {
     modusAnweisung = `MODUS: ABEND - MIT ECHTER RUECKMELDUNG DER PERSON.
-Die Person hat morgens diese Sorge geschrieben (unten als SORGE MORGENS). Jetzt ist Abend, und sie hat SELBST aufgeschrieben, wie es ihr jetzt geht (unten als RUECKMELDUNG ABENDS). Das ist keine Vermutung von dir - nutze genau das, was sie geschrieben hat. Wenn sie sagt, es ist besser geworden: bestaetige das ehrlich und zeig, warum das zum Prinzip dieser Tuer passt. Wenn sie sagt, es ist immer noch schwer: nimm das ernst, rede es nicht klein, aber biete trotzdem die Tuer-Lehre als neuen Blickwinkel an. Gib ihre eigenen Worte aus beiden Texten zurueck (kurz, in Anfuehrungszeichen). Schliesse mit dem Prinzip dieser Tuer.`;
+Die Person hat morgens diese Sorge geschrieben (unten als SORGE MORGENS). Jetzt ist Abend, und sie hat SELBST aufgeschrieben, wie es ihr jetzt geht (unten als RUECKMELDUNG ABENDS). Das ist keine Vermutung von dir - nutze genau das, was sie geschrieben hat. Wenn sie sagt, es ist besser geworden: bestaetige das ehrlich und zeig, warum das zum Prinzip dieser Tuer passt. Wenn sie sagt, es ist immer noch schwer: nimm das ernst, rede es nicht klein, aber biete trotzdem die Tuer-Lehre als neuen Blickwinkel an. Gib ihre eigenen Worte aus beiden Texten zurueck (kurz, in Anfuehrungszeichen). Schliesse mit dem Prinzip dieser Tuer und mit EINEM konkreten, greifbaren Gedanken fuer morgen - nicht philosophisch-vage.`;
   } else {
     modusAnweisung = `MODUS: ABEND - OHNE EIGENE RUECKMELDUNG.
 Die Person hat morgens diese Sorge geschrieben, aber abends keine eigene Rueckmeldung dazugeschrieben. Gib ihr ihre Morgen-Worte zurueck (in Anfuehrungszeichen) und frag sanft, ob es sich seitdem veraendert hat - ohne es zu behaupten, da du es nicht sicher weisst. Schliesse mit dem Prinzip dieser Tuer.`;
@@ -74,7 +89,7 @@ ${modusAnweisung}
 DAS PRINZIP DIESER TUER - MUSS SPUERBAR EINFLIESSEN:
 Tuer ${tuerNummer}: "${tuerInfo.titel}"
 ${tuerInfo.prinzip}
-Nutze dieses Bild, aber VARIIERE, wie du es einbaust - mal explizit benennen, mal nur anklingen lassen, nie wortgleich wiederholen. Erfinde jedes Mal einen neuen Zugang zum selben Kernprinzip.
+Nutze dieses Bild, aber VARIIERE, wie du es einbaust - mal explizit benennen, mal nur anklingen lassen, nie wortgleich wiederholen.${themenpfadZeile}
 
 ANREDE:
 Vornamen nutzen, falls gegeben. Bei erkennbarem Geschlecht zusaetzlich "mein Lieber"/"meine Liebe". Genau einmal, am Anfang.
