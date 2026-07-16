@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Der stille Arbeiter</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--ground:#12100E;--raised:#1C1814;--read:#E8DFD2;--faded:#8A7B6B;--ember:#B8703F;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--ground);color:var(--read);font-family:'Newsreader',Georgia,serif;font-weight:300;min-height:100vh;line-height:1.8;}
+  .wrap{max-width:520px;margin:0 auto;padding:8vh 7vw;}
+  .eyebrow{font-family:'Fraunces',serif;text-transform:uppercase;letter-spacing:0.26em;font-size:0.7rem;color:var(--faded);margin-bottom:1.5rem;text-align:center;}
+  h1{font-family:'Fraunces',serif;font-weight:300;font-size:1.6rem;margin-bottom:1.8rem;text-align:center;}
+  label{display:block;font-size:0.85rem;color:var(--faded);margin-bottom:0.4rem;margin-top:1.1rem;}
+  input, textarea{width:100%;background:var(--raised);border:1px solid rgba(138,123,107,0.25);border-radius:3px;color:var(--read);font-family:'Newsreader',Georgia,serif;font-size:1.02rem;font-weight:300;padding:0.85rem 1rem;}
+  textarea{min-height:90px;resize:vertical;}
+  input:focus, textarea:focus{outline:none;border-color:rgba(184,112,63,0.6);}
+  button{width:100%;margin-top:1.5rem;font-family:'Fraunces',serif;font-size:1rem;color:var(--read);background:transparent;border:1px solid rgba(184,112,63,0.5);border-radius:2px;padding:0.9rem;cursor:pointer;}
+  button:hover:not(:disabled){border-color:var(--ember);background:rgba(184,112,63,0.08);}
+  button:disabled{opacity:0.45;cursor:default;}
+  #meldung{margin-top:1.5rem;font-size:0.95rem;text-align:center;min-height:1.5em;word-break:break-word;}
+  .fehler{color:#e08050;}
+  .erfolg{color:var(--ember);}
+  .card{background:var(--raised);border-radius:4px;padding:1.6rem;margin-top:1.5rem;}
+  .card h2{font-family:'Fraunces',serif;font-weight:300;font-style:italic;font-size:1.2rem;margin-bottom:1rem;color:#d8c9b6;}
+  .umkehr-text{font-size:1.02rem;line-height:1.85;white-space:pre-wrap;margin-top:1rem;}
+  .versteckt{display:none;}
+  .abschnitt{border-top:1px solid rgba(138,123,107,0.15);padding-top:2rem;margin-top:2rem;}
+  .hinweis{font-size:0.85rem;color:var(--faded);text-align:center;margin-top:0.5rem;}
+  .laedt{color:var(--faded);font-style:italic;}
+  .optional{font-size:0.78rem;color:#5a5148;margin-top:0.3rem;}
+  .tuer-nav{display:flex;justify-content:center;gap:8px;margin-top:2rem;flex-wrap:wrap;}
+  .tuer-nav a{color:var(--faded);text-decoration:none;font-size:0.8rem;padding:4px 8px;border:1px solid rgba(138,123,107,0.2);border-radius:3px;}
+  .tuer-nav a.aktiv{color:var(--ember);border-color:var(--ember);}
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div id="loginBereich">
+      <div class="eyebrow">Anmelden</div>
+      <h1>Bevor die Tuer sich oeffnet</h1>
+      <label for="email">E-Mail</label>
+      <input id="email" type="email" placeholder="deine@email.de" />
+      <label for="passwort">Passwort</label>
+      <input id="passwort" type="password" placeholder="Dein Passwort" />
+      <button id="loginBtn">Anmelden</button>
+      <div id="meldung">Bereit.</div>
+    </div>
+
+    <div id="appBereich" class="versteckt">
+      <div class="eyebrow" id="begruessung">Tuer</div>
+      <h1 id="tuerTitel">...</h1>
+
+      <div class="abschnitt" id="morgenBereich">
+        <div class="card">
+          <h2>Morgen: was drueckt gerade?</h2>
+          <label for="sorgeInput">Schreib es auf.</label>
+          <textarea id="sorgeInput" placeholder="Ein Satz reicht."></textarea>
+          <button id="sorgeSpeichernBtn">Absenden</button>
+          <div id="morgenMeldung"></div>
+          <div id="morgenAntwort" class="umkehr-text"></div>
+        </div>
+      </div>
+
+      <div class="abschnitt" id="abendBereich">
+        <div class="card">
+          <h2>Abend: wie geht es dir jetzt?</h2>
+          <label for="abendInput">Schreib, wie's dir geht - besser, schlechter, warum. Kannst du auch leer lassen.</label>
+          <textarea id="abendInput" placeholder="Zum Beispiel: Es ist besser geworden, weil... / Es ist immer noch schwer, weil..."></textarea>
+          <p class="optional">Optional. Leer lassen geht auch.</p>
+          <button id="umkehrHolenBtn">Die Umkehr holen</button>
+          <p class="hinweis" id="abendHinweis"></p>
+          <div id="umkehrErgebnis" class="umkehr-text"></div>
+        </div>
+      </div>
+
+      <div class="tuer-nav" id="tuerNav"></div>
+
+    </div>
+
+  </div>
+
+<script>
+  var SUPABASE_URL = 'https://kkgpsjlchcfrkcfhbgtp.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_L2hwq-MPg-2ZdCd6Dw2RUA_Hw_oT0vp';
+  var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var urlParams = new URLSearchParams(window.location.search);
+  var tuerNummer = parseInt(urlParams.get('tuer')) || 1;
+  if (tuerNummer < 1 || tuerNummer > 9) tuerNummer = 1;
+
+  var meldung = document.getElementById('meldung');
+  var loginBtn = document.getElementById('loginBtn');
+  var loginBereich = document.getElementById('loginBereich');
+  var appBereich = document.getElementById('appBereich');
+  var begruessung = document.getElementById('begruessung');
+  var tuerTitel = document.getElementById('tuerTitel');
+  var tuerNav = document.getElementById('tuerNav');
+
+  var aktuellesProfil = null;
+  var aktuelleUserId = null;
+  var aktuellerTuerContent = null;
+
+  for (var i = 1; i <= 9; i++) {
+    var link = document.createElement('a');
+    link.href = 'tuer.html?tuer=' + i;
+    link.textContent = 'Tuer ' + i;
+    if (i === tuerNummer) link.className = 'aktiv';
+    tuerNav.appendChild(link);
+  }
+
+  loginBtn.addEventListener('click', function(){
+    handleLogin();
+  });
+
+  async function handleLogin(){
+    try {
+      var email = document.getElementById('email').value.trim();
+      var passwort = document.getElementById('passwort').value;
+
+      if(!email || !passwort){
+        meldung.className = 'fehler';
+        meldung.textContent = 'E-Mail und Passwort eingeben.';
+        return;
+      }
+
+      loginBtn.disabled = true;
+      meldung.className = '';
+      meldung.textContent = 'Du wirst angemeldet...';
+
+      var loginResult = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: passwort
+      });
+
+      if(loginResult.error){
+        meldung.className = 'fehler';
+        meldung.textContent = 'FEHLER: ' + loginResult.error.message;
+        loginBtn.disabled = false;
+        return;
+      }
+
+      aktuelleUserId = loginResult.data.user.id;
+
+      var profilResult = await supabaseClient
+        .from('profile')
+        .select('vorname, geschlecht')
+        .eq('id', aktuelleUserId)
+        .single();
+
+      if(profilResult.error){
+        meldung.className = 'fehler';
+        meldung.textContent = 'Angemeldet, aber Profil-Fehler: ' + profilResult.error.message;
+        loginBtn.disabled = false;
+        return;
+      }
+
+      aktuellesProfil = profilResult.data;
+
+      var tuerResult = await supabaseClient
+        .from('tueren_content')
+        .select('titel, prinzip')
+        .eq('tuer', tuerNummer)
+        .single();
+
+      if(tuerResult.error){
+        meldung.className = 'fehler';
+        meldung.textContent = 'Tuer-Inhalt nicht gefunden: ' + tuerResult.error.message;
+        loginBtn.disabled = false;
+        return;
+      }
+
+      aktuellerTuerContent = tuerResult.data;
+
+      loginBereich.className = 'versteckt';
+      appBereich.className = '';
+      begruessung.textContent = 'Tuer ' + tuerNummer + ' - Willkommen, ' + aktuellesProfil.vorname;
+      tuerTitel.textContent = aktuellerTuerContent.titel;
+
+    } catch (err) {
+      meldung.className = 'fehler';
+      meldung.textContent = 'UNERWARTETER FEHLER: ' + (err && err.message ? err.message : String(err));
+      loginBtn.disabled = false;
+    }
+  }
+
+  var sorgeSpeichernBtn = document.getElementById('sorgeSpeichernBtn');
+  var morgenMeldung = document.getElementById('morgenMeldung');
+  var morgenAntwort = document.getElementById('morgenAntwort');
+
+  sorgeSpeichernBtn.addEventListener('click', function(){
+    speichereSorgeUndAntworte();
+  });
+
+  async function speichereSorgeUndAntworte(){
+    try {
+      var text = document.getElementById('sorgeInput').value.trim();
+      if(!text){
+        morgenMeldung.className = 'fehler';
+        morgenMeldung.textContent = 'Schreib zuerst etwas auf.';
+        return;
+      }
+
+      sorgeSpeichernBtn.disabled = true;
+      morgenMeldung.className = 'laedt';
+      morgenMeldung.textContent = 'Wird gespeichert...';
+      morgenAntwort.textContent = '';
+
+      var insertResult = await supabaseClient.from('sorgen').insert({
+        user_id: aktuelleUserId,
+        tuer: tuerNummer,
+        text: text
+      });
+
+      if(insertResult.error){
+        morgenMeldung.className = 'fehler';
+        morgenMeldung.textContent = 'FEHLER: ' + insertResult.error.message;
+        sorgeSpeichernBtn.disabled = false;
+        return;
+      }
+
+      morgenMeldung.className = 'laedt';
+      morgenMeldung.textContent = 'Ich schau mir das an...';
+
+      var response = await fetch('/api/Umkehr', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          sorge: text,
+          tuer: tuerNummer,
+          name: aktuellesProfil.vorname,
+          geschlecht: aktuellesProfil.geschlecht,
+          moment: 'morgen'
+        })
+      });
+
+      var data = await response.json();
+
+      if(!response.ok || !data.umkehr){
+        morgenMeldung.className = 'fehler';
+        morgenMeldung.textContent = 'Gespeichert, aber Antwort-Fehler: ' + (data.error || 'Unbekannt');
+        sorgeSpeichernBtn.disabled = false;
+        return;
+      }
+
+      morgenMeldung.textContent = '';
+      morgenAntwort.textContent = data.umkehr;
+      sorgeSpeichernBtn.disabled = false;
+
+    } catch (err) {
+      morgenMeldung.className = 'fehler';
+      morgenMeldung.textContent = 'UNERWARTETER FEHLER: ' + (err && err.message ? err.message : String(err));
+      sorgeSpeichernBtn.disabled = false;
+    }
+  }
+
+  var umkehrHolenBtn = document.getElementById('umkehrHolenBtn');
+  var umkehrErgebnis = document.getElementById('umkehrErgebnis');
+  var abendHinweis = document.getElementById('abendHinweis');
+
+  umkehrHolenBtn.addEventListener('click', function(){
+    holeUmkehr();
+  });
+
+  async function holeUmkehr(){
+    try {
+      umkehrHolenBtn.disabled = true;
+      abendHinweis.className = 'hinweis';
+      abendHinweis.textContent = 'Deine Sorge von heute wird gesucht...';
+      umkehrErgebnis.textContent = '';
+
+      var abendText = document.getElementById('abendInput').value.trim();
+
+      var sorgenResult = await supabaseClient
+        .from('sorgen')
+        .select('text, created_at')
+        .eq('user_id', aktuelleUserId)
+        .eq('tuer', tuerNummer)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if(sorgenResult.error){
+        abendHinweis.className = 'hinweis fehler';
+        abendHinweis.textContent = 'FEHLER BEIM LADEN: ' + sorgenResult.error.message;
+        umkehrHolenBtn.disabled = false;
+        return;
+      }
+
+      if(!sorgenResult.data || sorgenResult.data.length === 0){
+        abendHinweis.className = 'hinweis fehler';
+        abendHinweis.textContent = 'Keine Sorge gefunden. Speichere zuerst eine im Morgen-Bereich.';
+        umkehrHolenBtn.disabled = false;
+        return;
+      }
+
+      var sorgeText = sorgenResult.data[0].text;
+
+      if(abendText){
+        await supabaseClient.from('journal').insert({
+          user_id: aktuelleUserId,
+          tuer: tuerNummer,
+          text: abendText
+        });
+      }
+
+      abendHinweis.textContent = 'Der Abend schaut auf deine Worte...';
+
+      var response = await fetch('/api/Umkehr', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          sorge: sorgeText,
+          abendText: abendText,
+          tuer: tuerNummer,
+          name: aktuellesProfil.vorname,
+          geschlecht: aktuellesProfil.geschlecht,
+          moment: 'abend'
+        })
+      });
+
+      var data = await response.json();
+
+      if(!response.ok || !data.umkehr){
+        abendHinweis.className = 'hinweis fehler';
+        abendHinweis.textContent = 'FEHLER: ' + (data.error || 'Unbekannt');
+        umkehrHolenBtn.disabled = false;
+        return;
+      }
+
+      await supabaseClient.from('fortschritt').upsert({
+        user_id: aktuelleUserId,
+        tuer: tuerNummer
+      }, { onConflict: 'user_id,tuer' });
+
+      abendHinweis.textContent = '';
+      umkehrErgebnis.textContent = data.umkehr;
+      umkehrHolenBtn.disabled = false;
+
+    } catch (err) {
+      abendHinweis.className = 'hinweis fehler';
+      abendHinweis.textContent = 'UNERWARTETER FEHLER: ' + (err && err.message ? err.message : String(err));
+      umkehrHolenBtn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
