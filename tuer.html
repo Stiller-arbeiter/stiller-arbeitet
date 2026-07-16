@@ -116,6 +116,46 @@
     handleLogin();
   });
 
+  async function ladeAppFuerUser(userId){
+    aktuelleUserId = userId;
+
+    var profilResult = await supabaseClient
+      .from('profile')
+      .select('vorname, geschlecht, themenpfad')
+      .eq('id', aktuelleUserId)
+      .single();
+
+    if(profilResult.error){
+      meldung.className = 'fehler';
+      meldung.textContent = 'Angemeldet, aber Profil-Fehler: ' + profilResult.error.message;
+      loginBtn.disabled = false;
+      return false;
+    }
+
+    aktuellesProfil = profilResult.data;
+
+    var tuerResult = await supabaseClient
+      .from('tueren_content')
+      .select('titel, prinzip')
+      .eq('tuer', tuerNummer)
+      .single();
+
+    if(tuerResult.error){
+      meldung.className = 'fehler';
+      meldung.textContent = 'Tuer-Inhalt nicht gefunden: ' + tuerResult.error.message;
+      loginBtn.disabled = false;
+      return false;
+    }
+
+    aktuellerTuerContent = tuerResult.data;
+
+    loginBereich.className = 'versteckt';
+    appBereich.className = '';
+    begruessung.textContent = 'Tuer ' + tuerNummer + ' - Willkommen, ' + aktuellesProfil.vorname;
+    tuerTitel.textContent = aktuellerTuerContent.titel;
+    return true;
+  }
+
   async function handleLogin(){
     try {
       var email = document.getElementById('email').value.trim();
@@ -143,42 +183,7 @@
         return;
       }
 
-      aktuelleUserId = loginResult.data.user.id;
-
-      var profilResult = await supabaseClient
-        .from('profile')
-        .select('vorname, geschlecht, themenpfad')
-        .eq('id', aktuelleUserId)
-        .single();
-
-      if(profilResult.error){
-        meldung.className = 'fehler';
-        meldung.textContent = 'Angemeldet, aber Profil-Fehler: ' + profilResult.error.message;
-        loginBtn.disabled = false;
-        return;
-      }
-
-      aktuellesProfil = profilResult.data;
-
-      var tuerResult = await supabaseClient
-        .from('tueren_content')
-        .select('titel, prinzip')
-        .eq('tuer', tuerNummer)
-        .single();
-
-      if(tuerResult.error){
-        meldung.className = 'fehler';
-        meldung.textContent = 'Tuer-Inhalt nicht gefunden: ' + tuerResult.error.message;
-        loginBtn.disabled = false;
-        return;
-      }
-
-      aktuellerTuerContent = tuerResult.data;
-
-      loginBereich.className = 'versteckt';
-      appBereich.className = '';
-      begruessung.textContent = 'Tuer ' + tuerNummer + ' - Willkommen, ' + aktuellesProfil.vorname;
-      tuerTitel.textContent = aktuellerTuerContent.titel;
+      await ladeAppFuerUser(loginResult.data.user.id);
 
     } catch (err) {
       meldung.className = 'fehler';
@@ -186,6 +191,18 @@
       loginBtn.disabled = false;
     }
   }
+
+  async function pruefeBestehendeSitzung(){
+    try {
+      var sessionResult = await supabaseClient.auth.getSession();
+      if(sessionResult.data && sessionResult.data.session && sessionResult.data.session.user){
+        meldung.textContent = 'Sitzung gefunden, lade...';
+        await ladeAppFuerUser(sessionResult.data.session.user.id);
+      }
+    } catch (err) {
+    }
+  }
+  pruefeBestehendeSitzung();
 
   var sorgeSpeichernBtn = document.getElementById('sorgeSpeichernBtn');
   var morgenMeldung = document.getElementById('morgenMeldung');
