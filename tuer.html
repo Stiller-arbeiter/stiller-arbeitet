@@ -53,6 +53,7 @@
     <div id="appBereich" class="versteckt">
       <div class="eyebrow" id="begruessung">Tuer</div>
       <h1 id="tuerTitel">...</h1>
+      <p id="tuerPrinzip" class="hinweis" style="margin-bottom:1.5rem;text-align:left;line-height:1.9;"></p>
 
       <div class="abschnitt" id="morgenBereich">
         <div class="card">
@@ -98,6 +99,7 @@
   var appBereich = document.getElementById('appBereich');
   var begruessung = document.getElementById('begruessung');
   var tuerTitel = document.getElementById('tuerTitel');
+  var tuerPrinzip = document.getElementById('tuerPrinzip');
   var tuerNav = document.getElementById('tuerNav');
 
   var aktuellesProfil = null;
@@ -153,6 +155,7 @@
     appBereich.className = '';
     begruessung.textContent = 'Tuer ' + tuerNummer + ' - Willkommen, ' + aktuellesProfil.vorname;
     tuerTitel.textContent = aktuellerTuerContent.titel;
+    tuerPrinzip.textContent = aktuellerTuerContent.prinzip;
     return true;
   }
 
